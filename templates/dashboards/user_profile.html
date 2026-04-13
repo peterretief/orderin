@@ -1,0 +1,222 @@
+{% extends 'dashboards/base.html' %}
+
+{% block title %}My Profile - Order In{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8">
+            <h1>👤 My Profile</h1>
+
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Personal Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Username</label>
+                            <p class="font-weight-bold">{{ user.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Email</label>
+                            <p class="font-weight-bold">{{ user.email }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">First Name</label>
+                            <p class="font-weight-bold">{{ user.first_name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Last Name</label>
+                            <p class="font-weight-bold">{{ user.last_name }}</p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Account Type</label>
+                            <p class="font-weight-bold"><span class="badge bg-primary">{{ user.get_user_type_display }}</span></p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Account Status</label>
+                            <p class="font-weight-bold">
+                                {% if user.is_active %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="text-muted">Currency Preference</label>
+                            <p class="font-weight-bold">{{ currency_symbol }}</p>
+                        </div>
+                    </div>
+
+                    {% if user.phone %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Phone</label>
+                            <p class="font-weight-bold">{{ user.phone }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    {% if user.city %}
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">City</label>
+                            <p class="font-weight-bold">{{ user.city }}</p>
+                        </div>
+                        {% if user.state %}
+                        <div class="col-md-6">
+                            <label class="text-muted">State</label>
+                            <p class="font-weight-bold">{{ user.state }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {% if user.user_type == 'market_agent' and market_agent %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Shop Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="text-muted">Shop Name</label>
+                            <p class="font-weight-bold">{{ market_agent.user.shop_name }}</p>
+                        </div>
+                    </div>
+
+                    {% if market_agent.user.shop_description %}
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="text-muted">Shop Description</label>
+                            <p>{{ market_agent.user.shop_description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="text-muted">Total Products</label>
+                            <p class="font-weight-bold">{{ total_products }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.user_type == 'subscriber' %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Summary</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="text-muted">Account Balance</label>
+                            <p class="font-weight-bold" style="color: #667eea; font-size: 1.5rem;">
+                                {{ currency_symbol }}{{ balance|default:"0.00" }}
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="text-muted">Total Orders</label>
+                            <p class="font-weight-bold" style="font-size: 1.5rem;">{{ total_orders }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if user.user_type in 'caterer' or user.user_type == 'delivery_person' %}
+            {% if service_agent %}
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Service Information</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="text-muted">Service Name</label>
+                            <p class="font-weight-bold">{{ service_agent.user.service_name }}</p>
+                        </div>
+                    </div>
+
+                    {% if service_agent.user.service_description %}
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="text-muted">Service Description</label>
+                            <p>{{ service_agent.user.service_description }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label class="text-muted">Rating</label>
+                            <p class="font-weight-bold">⭐ {{ service_agent.rating|floatformat:1 }}/5.0</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endif %}
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Actions</h5>
+                </div>
+                <div class="card-body" style="display: flex; flex-direction: column; gap: 10px;">
+                    <a href="{% url 'edit_profile' %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edit Profile
+                    </a>
+                    <a href="/admin/auth/user/{{ user.id }}/password/" class="btn btn-warning" target="_blank">
+                        <i class="fas fa-lock"></i> Change Password
+                    </a>
+                    <form method="post" action="{% url 'logout' %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger w-100">
+                            <i class="fas fa-sign-out-alt"></i> Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Details</h5>
+                </div>
+                <div class="card-body" style="font-size: 0.9rem;">
+                    <div class="mb-2">
+                        <label class="text-muted">Joined</label>
+                        <p class="mb-0">{{ user.created_at|date:"M d, Y" }}</p>
+                    </div>
+                    <div class="mb-2">
+                        <label class="text-muted">Last Updated</label>
+                        <p class="mb-0">{{ user.updated_at|date:"M d, Y H:i" }}</p>
+                    </div>
+                    {% if user.is_verified %}
+                    <div class="mb-0">
+                        <label class="text-muted">Verification</label>
+                        <p class="mb-0"><span class="badge bg-success">Verified</span></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,106 @@
+{% extends 'shop/base.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <h1 style="font-size: 2.5rem; font-weight: 700; margin-bottom: 30px;">🛒 Shopping Cart</h1>
+
+    {% if cart_items %}
+    <div class="row">
+        <div class="col-lg-8">
+            <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden;">
+                {% for item in cart_items %}
+                <div style="display: flex; padding: 20px; border-bottom: 1px solid #eee; align-items: center; gap: 20px;">
+                    <div style="width: 120px; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; flex-shrink: 0;">
+                        {% if item.product.image %}
+                            <img src="{{ item.product.image.url }}" alt="{{ item.product.name }}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 8px;">
+                        {% else %}
+                            <i class="fas fa-box" style="font-size: 2rem;"></i>
+                        {% endif %}
+                    </div>
+
+                    <div style="flex: 1;">
+                        <h5 style="font-weight: 600; color: #333; margin-bottom: 8px;">{{ item.product.name }}</h5>
+                        <p style="color: #666; margin-bottom: 0; font-size: 0.9rem;">From: <strong>{{ item.product.market_agent.user.shop_name }}</strong></p>
+                        <p style="color: #666; margin-bottom: 8px; font-size: 0.9rem;">{{ item.product.unit }}</p>
+                        <div style="color: #667eea; font-weight: 600; font-size: 1.1rem;">{{ currency_symbol }}{{ item.price }}/{{ item.product.unit }}</div>
+                    </div>
+
+                    <div style="text-align: center;">
+                        <div style="font-size: 0.9rem; color: #666; margin-bottom: 8px;">Qty: {{ item.quantity }}</div>
+                        <div style="font-size: 1.3rem; font-weight: bold; color: #333; margin-bottom: 12px;">{{ currency_symbol }}{{ item.total }}</div>
+                        <form method="post" action="{% url 'remove_from_cart' item.product.id %}" style="display: inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="fas fa-trash"></i> Remove
+                            </button>
+                        </form>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div style="background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 25px; height: fit-content; position: sticky; top: 100px;">
+                <h4 style="font-weight: 700; margin-bottom: 20px;">Order Summary</h4>
+
+                <div style="border-bottom: 1px solid #eee; padding-bottom: 15px; margin-bottom: 15px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem;">
+                        <span>Subtotal:</span>
+                        <span>{{ currency_symbol }}{{ total }}</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 0.95rem;">
+                        <span>Tax (estimated):</span>
+                        <span>{{ currency_symbol }}0.00</span>
+                    </div>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 20px;">
+                    <div style="font-size: 0.85rem; color: #666; margin-bottom: 8px;">Your Balance:</div>
+                    <div style="font-size: 1.8rem; font-weight: bold; color: #667eea;">{{ currency_symbol }}{{ current_balance }}</div>
+                </div>
+
+                <div style="padding: 15px; border-radius: 8px; margin-bottom: 20px; {% if can_checkout %}background: #d4edda;{% else %}background: #f8d7da;{% endif %}">
+                    <div style="font-size: 0.9rem; font-weight: 600; {% if can_checkout %}color: #155724;{% else %}color: #721c24;{% endif %}">
+                        {% if can_checkout %}
+                            ✓ Sufficient balance
+                        {% else %}
+                            ✗ Insufficient balance (need {{ currency_symbol }}{{ total|add:0|add:"-current_balance" }})
+                        {% endif %}
+                    </div>
+                </div>
+
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    {% if can_checkout %}
+                        <form method="post" action="{% url 'checkout' %}" style="display: contents;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-lg" style="background: #28a745; color: white; border: none; font-weight: 600; border-radius: 6px;">
+                                <i class="fas fa-check-circle"></i> Proceed to Checkout
+                            </button>
+                        </form>
+                    {% else %}
+                        <button class="btn btn-lg" disabled style="background: #ccc; color: white; border: none; cursor: not-allowed; border-radius: 6px;">
+                            Insufficient Balance
+                        </button>
+                    {% endif %}
+                    <a href="/shop/" class="btn btn-outline-secondary">
+                        <i class="fas fa-shopping-bag"></i> Continue Shopping
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div style="background: white; border-radius: 12px; padding: 60px 20px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        <div style="font-size: 4rem; color: #667eea; margin-bottom: 20px;">
+            <i class="fas fa-shopping-cart"></i>
+        </div>
+        <h2 style="color: #333; margin-bottom: 10px;">Your cart is empty</h2>
+        <p style="color: #666; margin-bottom: 30px;">Start shopping to add items to your cart</p>
+        <a href="/shop/" class="btn btn-lg" style="background: #667eea; color: white; border: none; font-weight: 600; padding: 12px 30px; border-radius: 6px; text-decoration: none; display: inline-block;">
+            <i class="fas fa-shopping-bag"></i> Start Shopping
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,539 @@
+{% extends 'shop/base.html' %}
+{% load static %}
+
+{% block title %}Select Delivery Method - Order In{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <h2><i class="fas fa-truck"></i> Select Delivery Method</h2>
+            <p class="text-muted">Choose how you'd like to receive your order</p>
+        </div>
+    </div>
+
+    {% if error %}
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                <i class="fas fa-exclamation-circle"></i> {{ error }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Order Summary -->
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Order Summary</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Order ID:</strong> #{{ order.id }}</p>
+                            <p><strong>Items:</strong> {{ order.items.count }}</p>
+                            {% if market_agent %}
+                            <p><strong>From:</strong> {{ market_agent.business_name }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <p><strong>Order Total:</strong> <span style="font-size: 1.3rem; color: #667eea;">R{{ order.total_amount }}</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Address Validation Status -->
+    <div class="row mb-4">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-map-marker-alt"></i> Address Verification</h6>
+                </div>
+                <div class="card-body">
+                    <!-- Store Address Status -->
+                    <div class="mb-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="mb-1"><strong>Store Location</strong></p>
+                                {% if market_agent %}
+                                <small class="text-muted">{{ market_agent.user.address }}, {{ market_agent.user.city }}</small>
+                                {% else %}
+                                <small class="text-muted">Store address not available</small>
+                                {% endif %}
+                            </div>
+                            <div id="storeAddressStatus" class="ms-3">
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-spinner fa-spin"></i> Checking...
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <!-- Delivery Address Status -->
+                    <div>
+                        <div class="d-flex align-items-center justify-content-between">
+                            <div>
+                                <p class="mb-1"><strong>Your Delivery Address</strong></p>
+                                <small class="text-muted" id="customerAddressDisplay">Enter your address below</small>
+                            </div>
+                            <div id="customerAddressStatus" class="ms-3">
+                                <span class="badge bg-secondary">
+                                    <i class="fas fa-minus-circle"></i> Pending
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delivery Method Selection -->
+    <form method="post" id="deliveryForm">
+        {% csrf_token %}
+        
+        <div class="row mb-4">
+            <div class="col-md-8 offset-md-2">
+                <h5 class="mb-3">Available Delivery Methods</h5>
+                
+                {% for method in delivery_methods %}
+                <div class="card mb-3 delivery-method-card" data-method-id="{{ method.id }}" data-method-name="{{ method.name }}">
+                    <div class="card-body">
+                        <div class="form-check">
+                            <input class="form-check-input delivery-method-radio" type="radio" 
+                                   name="delivery_method" id="method_{{ method.id }}" 
+                                   value="{{ method.id }}" data-method-name="{{ method.name }}">
+                            <label class="form-check-label w-100" for="method_{{ method.id }}" style="cursor: pointer;">
+                                <div class="row">
+                                    <div class="col-md-8">
+                                        <h6 class="mb-1">
+                                            {% if method.name == 'home_delivery' %}
+                                            <i class="fas fa-home"></i> Home Delivery
+                                            {% elif method.name == 'collection' %}
+                                            <i class="fas fa-hand-holding-box"></i> Collection
+                                            {% elif method.name == 'collection_point' %}
+                                            <i class="fas fa-store"></i> Collection Point
+                                            {% elif method.name == 'express' %}
+                                            <i class="fas fa-bolt"></i> Express Delivery
+                                            {% else %}
+                                            <i class="fas fa-shipping-fast"></i> {{ method.name|upper }}
+                                            {% endif %}
+                                        </h6>
+                                        <small class="text-muted d-block">{{ method.description }}</small>
+                                    </div>
+                                    <div class="col-md-4 text-end">
+                                        <small class="text-success">
+                                            {% if method.base_fee == 0 %}
+                                            <strong>FREE</strong>
+                                            {% else %}
+                                            <strong>R{{ method.base_fee }}</strong>
+                                            {% endif %}
+                                        </small>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Address Form (for home delivery) -->
+        <div id="homeDeliveryForm" class="row mb-4" style="display: none;">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Delivery Address</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="delivery_address" class="form-label">Street Address *</label>
+                            <input type="text" class="form-control" id="delivery_address" 
+                                   name="delivery_address" placeholder="123 Main Street">
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="delivery_city" class="form-label">City *</label>
+                                <input type="text" class="form-control" id="delivery_city" 
+                                       name="delivery_city" placeholder="City">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="delivery_state" class="form-label">State *</label>
+                                <input type="text" class="form-control" id="delivery_state" 
+                                       name="delivery_state" placeholder="State">
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <label for="delivery_zip_code" class="form-label">Zip Code *</label>
+                            <input type="text" class="form-control" id="delivery_zip_code" 
+                                   name="delivery_zip_code" placeholder="12345">
+                        </div>
+                        
+                        <!-- Delivery Cost Estimation -->
+                        <div id="costEstimation" class="alert alert-info mt-4" style="display: none;">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle"></i> Estimated Delivery Cost
+                            </h6>
+                            <hr>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p class="mb-1"><small>Base Fee:</small></p>
+                                    <p id="baseFee" class="mb-2"><strong>Calculating...</strong></p>
+                                    
+                                    <p class="mb-1"><small>Distance:</small></p>
+                                    <p id="distanceInfo" class="mb-2"><strong>Calculating...</strong></p>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <p class="mb-1"><small>Estimated Delivery Fee:</small></p>
+                                    <p id="deliveryFee" style="font-size: 1.2rem; color: #667eea;">
+                                        <strong>Calculating...</strong>
+                                    </p>
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-0 mt-3">
+                                <i class="fas fa-lightbulb"></i> This is an estimate and may change based on actual conditions.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Collection Point Selection (for collection point delivery) -->
+        <div id="collectionPointForm" class="row mb-4" style="display: none;">
+            <div class="col-md-8 offset-md-2">
+                <div class="card">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">Select Collection Point</h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label for="collection_point" class="form-label">Available Collection Points *</label>
+                            <select class="form-select" id="collection_point" name="collection_point">
+                                <option value="">-- Choose a collection point --</option>
+                                {% for point in collection_points %}
+                                <option value="{{ point.id }}">
+                                    {{ point.name }} - {{ point.location_address }}
+                                    (Open: {{ point.opening_time|time:"H:i" }} - {{ point.closing_time|time:"H:i" }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted d-block mt-2">You can pick up your order at any collection point during their operating hours.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="row">
+            <div class="col-md-8 offset-md-2">
+                <div style="display: flex; gap: 15px; justify-content: space-between;">
+                    <a href="{% url 'view_cart' %}" class="btn btn-outline-secondary btn-lg">
+                        <i class="fas fa-arrow-left"></i> Back to Cart
+                    </a>
+                    <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                        <i class="fas fa-check"></i> Confirm Delivery Method
+                    </button>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deliveryMethodRadios = document.querySelectorAll('.delivery-method-radio');
+    const homeDeliveryForm = document.getElementById('homeDeliveryForm');
+    const collectionPointForm = document.getElementById('collectionPointForm');
+    const deliveryAddressInput = document.getElementById('delivery_address');
+    const collectionPointSelect = document.getElementById('collection_point');
+    const submitBtn = document.getElementById('submitBtn');
+    const deliveryCityInput = document.getElementById('delivery_city');
+    const costEstimation = document.getElementById('costEstimation');
+    
+    let selectedMethodId = null;
+    
+    deliveryMethodRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            const methodName = this.getAttribute('data-method-name');
+            selectedMethodId = this.value;
+            
+            // Hide all conditional forms
+            homeDeliveryForm.style.display = 'none';
+            collectionPointForm.style.display = 'none';
+            costEstimation.style.display = 'none';
+            
+            // Clear required attributes
+            deliveryAddressInput.removeAttribute('required');
+            document.getElementById('delivery_city').removeAttribute('required');
+            document.getElementById('delivery_state').removeAttribute('required');
+            document.getElementById('delivery_zip_code').removeAttribute('required');
+            collectionPointSelect.removeAttribute('required');
+            
+            // Show appropriate form
+            if (methodName === 'home_delivery') {
+                homeDeliveryForm.style.display = 'block';
+                deliveryAddressInput.setAttribute('required', 'required');
+                document.getElementById('delivery_city').setAttribute('required', 'required');
+                document.getElementById('delivery_state').setAttribute('required', 'required');
+                document.getElementById('delivery_zip_code').setAttribute('required', 'required');
+            } else if (methodName === 'collection_point') {
+                collectionPointForm.style.display = 'block';
+                collectionPointSelect.setAttribute('required', 'required');
+            }
+        });
+    });
+    
+    // Calculate delivery cost when address is entered
+    function calculateDeliveryCost() {
+        if (!selectedMethodId || deliveryAddressInput.value.length < 3) {
+            costEstimation.style.display = 'none';
+            return;
+        }
+        
+        const deliveryCity = deliveryCityInput.value;
+        if (!deliveryCity) {
+            costEstimation.style.display = 'none';
+            return;
+        }
+        
+        costEstimation.style.display = 'block';
+        
+        // Show calculating state
+        document.getElementById('baseFee').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+        document.getElementById('distanceInfo').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+        document.getElementById('deliveryFee').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Calculating...';
+        
+        // Call the API endpoint to calculate cost
+        fetch('/api/delivery/calculate-cost/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+                delivery_method_id: selectedMethodId,
+                delivery_address: deliveryAddressInput.value,
+                delivery_city: deliveryCity,
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.error) {
+                // Show detailed error message
+                let errorHTML = `<span class="text-danger"><strong>⚠️ Address Issue:</strong><br>${data.error}</span>`;
+                
+                if (data.address_issue === 'store') {
+                    errorHTML += `<br><small class="text-muted mt-2 d-block"><i class="fas fa-info-circle"></i> The store location cannot be found. Ask the store to update their address with more specific location details (e.g., include suburb name like "Epping" or "Observatory").</small>`;
+                } else if (data.address_issue === 'delivery') {
+                    errorHTML += `<br><small class="text-muted mt-2 d-block"><i class="fas fa-info-circle"></i> Please check your delivery address and include suburb/area name (e.g., "Observatory" not just "Cape Town").</small>`;
+                }
+                
+                document.getElementById('baseFee').innerHTML = errorHTML;
+                document.getElementById('distanceInfo').innerHTML = '-';
+                document.getElementById('deliveryFee').innerHTML = '-';
+                costEstimation.classList.remove('alert-info');
+                costEstimation.classList.add('alert-warning');
+                return;
+            }
+            
+            // Reset to info styling on success
+            costEstimation.classList.remove('alert-warning');
+            costEstimation.classList.add('alert-info');
+            
+            // Update the display with calculated values
+            const baseFee = parseFloat(data.base_fee).toFixed(2);
+            const totalCost = parseFloat(data.total_cost).toFixed(2);
+            
+            document.getElementById('baseFee').innerHTML = `<strong>✓ R${baseFee}</strong>`;
+            
+            if (data.distance_km) {
+                const distance = parseFloat(data.distance_km).toFixed(1);
+                document.getElementById('distanceInfo').innerHTML = `<strong>✓ ${distance} km</strong>`;
+            } else {
+                document.getElementById('distanceInfo').innerHTML = '<strong>-</strong>';
+            }
+            
+            document.getElementById('deliveryFee').innerHTML = `<strong>✓ R${totalCost}</strong>`;
+        })
+        .catch(error => {
+            console.error('Error calculating delivery cost:', error);
+            let errorMsg = 'Unable to calculate delivery cost. Please check your address and try again.';
+            document.getElementById('baseFee').innerHTML = `<span class="text-danger">⚠️ ${errorMsg}</span>`;
+            document.getElementById('distanceInfo').innerHTML = '-';
+            document.getElementById('deliveryFee').innerHTML = '-';
+            costEstimation.classList.remove('alert-info');
+            costEstimation.classList.add('alert-warning');
+        });
+    }
+    
+    // Address validation functions
+    function updateAddressStatus(elementId, isValid, address = null) {
+        const statusEl = document.getElementById(elementId);
+        if (isValid) {
+            statusEl.innerHTML = '<span class="badge bg-success"><i class="fas fa-check-circle"></i> Address Found</span>';
+        } else if (address === null) {
+            statusEl.innerHTML = '<span class="badge bg-secondary"><i class="fas fa-minus-circle"></i> Pending</span>';
+        } else {
+            statusEl.innerHTML = '<span class="badge bg-danger"><i class="fas fa-times-circle"></i> Not Found</span>';
+        }
+    }
+    
+    function validateStoreAddress() {
+        const storeAddress = '{{ market_agent.user.address }}';
+        const storeCity = '{{ market_agent.user.city }}';
+        
+        if (!storeAddress || !storeCity) {
+            updateAddressStatus('storeAddressStatus', false, 'empty');
+            return;
+        }
+        
+        // Call the API to validate store address
+        const fullAddress = storeAddress + ', ' + storeCity + ', Cape Town';
+        
+        fetch('/api/delivery/validate-address/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+                address: fullAddress
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateAddressStatus('storeAddressStatus', data.valid, 'checked');
+        })
+        .catch(error => {
+            console.error('Error validating store address:', error);
+            updateAddressStatus('storeAddressStatus', false, 'checked');
+        });
+    }
+    
+    function validateCustomerAddress() {
+        const address = deliveryAddressInput.value;
+        const city = deliveryCityInput.value;
+        
+        if (!address || !city) {
+            updateAddressStatus('customerAddressStatus', null, null);
+            return;
+        }
+        
+        // Update display of current address
+        const fullAddress = address + ', ' + city;
+        document.getElementById('customerAddressDisplay').textContent = fullAddress;
+        
+        // Call the API to validate customer address
+        fetch('/api/delivery/validate-address/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+            },
+            body: JSON.stringify({
+                address: fullAddress
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            updateAddressStatus('customerAddressStatus', data.valid, 'checked');
+        })
+        .catch(error => {
+            console.error('Error validating customer address:', error);
+        });
+    }
+    
+    // Validate store address on page load
+    window.addEventListener('load', function() {
+        validateStoreAddress();
+    });
+    
+    // Validate customer address as they type
+    let addressValidationTimeout;
+    [deliveryAddressInput, deliveryCityInput].forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(addressValidationTimeout);
+            addressValidationTimeout = setTimeout(validateCustomerAddress, 1000);
+        });
+    });
+    
+    // Debounced calculation on address input
+    let costCalculationTimeout;
+    [deliveryAddressInput, deliveryCityInput].forEach(input => {
+        input.addEventListener('input', function() {
+            clearTimeout(costCalculationTimeout);
+            costCalculationTimeout = setTimeout(calculateDeliveryCost, 1000);
+        });
+    });
+    
+    // Form validation
+    document.getElementById('deliveryForm').addEventListener('submit', function(e) {
+        const selectedMethod = document.querySelector('input[name="delivery_method"]:checked');
+        
+        if (!selectedMethod) {
+            e.preventDefault();
+            alert('Please select a delivery method');
+            return;
+        }
+        
+        const methodName = selectedMethod.getAttribute('data-method-name');
+        
+        if (methodName === 'home_delivery') {
+            if (!deliveryAddressInput.value || !document.getElementById('delivery_city').value ||
+                !document.getElementById('delivery_state').value || !document.getElementById('delivery_zip_code').value) {
+                e.preventDefault();
+                alert('Please provide complete delivery address');
+                return;
+            }
+        } else if (methodName === 'collection_point') {
+            if (!collectionPointSelect.value) {
+                e.preventDefault();
+                alert('Please select a collection point');
+                return;
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.delivery-method-card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+}
+
+.delivery-method-card:hover {
+    border-color: #667eea;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.delivery-method-card input[type="radio"]:checked ~ label,
+input[type="radio"]:checked + label {
+    color: #667eea;
+}
+
+.delivery-method-card input[type="radio"]:checked {
+    border-color: #667eea;
+}
+
+.form-check-input:checked {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.form-check-input:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+</style>
+{% endblock %}

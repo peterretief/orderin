@@ -1,0 +1,167 @@
+{% extends "dashboards/base.html" %}
+
+{% block title %}Transaction Details - Order In Admin{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    
+    <!-- Back Button -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <a href="{% url 'business_account_dashboard' %}" class="btn btn-secondary">
+                ← Back to Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Transaction Details -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">
+                        {% if transaction.type in 'subscriber_deposit,admin_fee' %}
+                            <span class="badge bg-success">{{ transaction.get_type_display }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ transaction.get_type_display }}</span>
+                        {% endif %}
+                        Transaction Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <th>Transaction ID:</th>
+                            <td><code>{{ transaction.id }}</code></td>
+                        </tr>
+                        <tr>
+                            <th>Type:</th>
+                            <td>{{ transaction.get_type_display }}</td>
+                        </tr>
+                        <tr>
+                            <th>Amount:</th>
+                            <td style="font-size: 1.2rem; font-weight: bold; color: #667eea;">
+                                R {{ transaction.amount|floatformat:2 }}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Date & Time:</th>
+                            <td>{{ transaction.created_at }}</td>
+                        </tr>
+                        <tr>
+                            <th>Description:</th>
+                            <td>{{ transaction.description }}</td>
+                        </tr>
+                        <tr>
+                            <th>Reference ID:</th>
+                            <td>
+                                {% if transaction.reference_id %}
+                                    <code>{{ transaction.reference_id }}</code>
+                                {% else %}
+                                    <span class="text-muted">—</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>Notes:</th>
+                            <td>
+                                {% if transaction.notes %}
+                                    {{ transaction.notes }}
+                                {% else %}
+                                    <span class="text-muted">No notes</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Balance Impact</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Balance Before</h6>
+                            <h4 style="color: #667eea;">R {{ transaction.balance_before|floatformat:2 }}</h4>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Balance After</h6>
+                            <h4 style="color: #667eea;">R {{ transaction.balance_after|floatformat:2 }}</h4>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Related Information -->
+        <div class="col-md-4">
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Related Entities</h5>
+                </div>
+                <div class="card-body">
+                    {% if transaction.subscriber %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Subscriber</h6>
+                        <p class="mb-0">
+                            <strong>{{ transaction.subscriber.username }}</strong><br>
+                            <small class="text-muted">{{ transaction.subscriber.email }}</small>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if transaction.market_agent %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Market Agent</h6>
+                        <p class="mb-0">
+                            <strong>{{ transaction.market_agent.user.username }}</strong><br>
+                            <small class="text-muted">{{ transaction.market_agent.user.shop_name }}</small>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if transaction.service_agent %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Service Agent</h6>
+                        <p class="mb-0">
+                            <strong>{{ transaction.service_agent.user.username }}</strong><br>
+                            <small class="text-muted">{{ transaction.service_agent.service_type }}</small>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if transaction.order %}
+                    <div class="mb-3">
+                        <h6 class="text-muted">Order</h6>
+                        <p class="mb-0">
+                            <strong>Order #{{ transaction.order.id }}</strong><br>
+                            <small class="text-muted">Status: {{ transaction.order.get_status_display }}</small>
+                        </p>
+                    </div>
+                    {% endif %}
+
+                    {% if not transaction.subscriber and not transaction.market_agent and not transaction.service_agent and not transaction.order %}
+                    <p class="text-muted">No related entities</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Account Info</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="text-muted">Business Account</h6>
+                    <p class="mb-0">
+                        <strong>{{ transaction.business_account.name }}</strong><br>
+                        <small class="text-muted">ID: {{ transaction.business_account.id }}</small>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

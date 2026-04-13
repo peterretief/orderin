@@ -1,0 +1,181 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Search Results{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Filter Sidebar -->
+        <div class="col-lg-2">
+            <div class="sidebar" style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,.08);">
+                <h5 class="mb-3">🔍 Refine Search</h5>
+                
+                <form method="get" action="{% url 'shop_search' %}" id="filterForm">
+                    <!-- Search Query -->
+                    <div class="mb-4">
+                        <label class="form-label">Search Term</label>
+                        <input type="text" name="q" class="form-control" value="{{ query }}" placeholder="Search...">
+                    </div>
+                    
+                    <!-- Category Filter -->
+                    <div class="mb-4">
+                        <label class="form-label">Category</label>
+                        <select name="category" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                            <option value="">All Categories</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}" {% if selected_category|stringformat:"s" == category.id|stringformat:"s" %}selected{% endif %}>
+                                {{ category.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <!-- Price Range -->
+                    <div class="mb-4">
+                        <label class="form-label">Price Range</label>
+                        <div class="row g-2">
+                            <div class="col-6">
+                                <input type="number" name="min_price" class="form-control" placeholder="Min" value="{{ min_price }}" min="0" step="0.01">
+                            </div>
+                            <div class="col-6">
+                                <input type="number" name="max_price" class="form-control" placeholder="Max" value="{{ max_price }}" min="0" step="0.01">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sorting -->
+                    <div class="mb-4">
+                        <label class="form-label">Sort By</label>
+                        <select name="sort" class="form-select" onchange="document.getElementById('filterForm').submit();">
+                            <option value="newest" {% if sort_by == 'newest' %}selected{% endif %}>Newest First</option>
+                            <option value="price_asc" {% if sort_by == 'price_asc' %}selected{% endif %}>Price: Low to High</option>
+                            <option value="price_desc" {% if sort_by == 'price_desc' %}selected{% endif %}>Price: High to Low</option>
+                            <option value="name_asc" {% if sort_by == 'name_asc' %}selected{% endif %}>Name: A to Z</option>
+                            <option value="name_desc" {% if sort_by == 'name_desc' %}selected{% endif %}>Name: Z to A</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-sm">🔍 Apply Filters</button>
+                        <a href="{% url 'shop_search' %}" class="btn btn-outline-secondary btn-sm">Clear Filters</a>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <!-- Quick Category Links -->
+                <h6 class="mb-3">Quick Categories</h6>
+                <a href="{% url 'shop_browse' %}" class="d-block small mb-2" style="color: #667eea; text-decoration: none;">All Products</a>
+                {% for category in categories|slice:":5" %}
+                <a href="?category={{ category.id }}" class="d-block small mb-2" style="color: #667eea; text-decoration: none;">
+                    → {{ category.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <div class="mb-4">
+                <h2 class="section-title">🔍 Search Results</h2>
+                {% if query or selected_category or min_price or max_price %}
+                <p class="text-muted">
+                    {% if query %}Searching for: <strong>"{{ query }}"</strong>{% endif %}
+                    {% if selected_category %}• Category: <strong>{{ selected_category }}</strong>{% endif %}
+                    {% if min_price or max_price %}• Price: <strong>{{ currency_symbol }}{{ min_price|default:"0" }}-{{ currency_symbol }}{{ max_price|default:"∞" }}</strong>{% endif %}
+                </p>
+                <p class="text-muted"><small>Found {{ result_count }} result{{ result_count|pluralize }}</small></p>
+                {% endif %}
+            </div>
+
+            <!-- Shops Section -->
+            {% if shops %}
+            <div class="mb-5">
+                <h4 class="mb-3" style="color: #667eea; font-weight: bold;">🏬 Shops Found ({{ shops|length }})</h4>
+                <div class="row g-3 mb-4">
+                    {% for shop in shops %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card h-100" style="border: 2px solid #667eea; cursor: pointer; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-5px)'" onmouseout="this.style.transform='translateY(0)'" onclick="window.location.href='{% url 'shop_home' %}?shop={{ shop.user.id %}';">
+                            <div class="card-body">
+                                {% if shop.user.shop_logo %}
+                                    <img src="{{ shop.user.shop_logo.url }}" alt="{{ shop.user.shop_name }}" style="width: 100%; height: 120px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;">
+                                {% else %}
+                                    <div style="width: 100%; height: 120px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 6px; display: flex; align-items: center; justify-content: center; margin-bottom: 12px;">
+                                        <i class="fas fa-store" style="font-size: 3rem; color: white;"></i>
+                                    </div>
+                                {% endif %}
+                                <h5 class="card-title">{{ shop.user.shop_name }}</h5>
+                                <p class="card-text text-muted" style="font-size: 0.9rem;">{{ shop.user.shop_description|truncatewords:15 }}</p>
+                                <div class="mt-3">
+                                    <small class="d-block text-muted"><i class="fas fa-tag"></i> Seller Rating: ⭐ 5.0</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr>
+            </div>
+            {% endif %}
+
+            <!-- Products Section -->
+            <div>
+                <h4 class="mb-3" style="color: #667eea; font-weight: bold;">📦 Products Found ({{ products|length }})</h4>
+                
+                {% if products %}
+                <div class="row g-4">
+                    {% for product in products %}
+                    <div class="col-md-6 col-lg-4 col-xl-3">
+                        <div class="product-card">
+                            <div class="product-image">
+                                {% if product.image %}
+                                    <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-100 h-100" style="object-fit: cover;">
+                                {% else %}
+                                    <i class="fas fa-box"></i>
+                                {% endif %}
+                            </div>
+                            <div class="product-info">
+                                <h5 class="product-name">{{ product.name }}</h5>
+                                <div class="product-price">{{ currency_symbol }}{{ product.price }}</div>
+                                <div class="product-unit">{{ product.unit }}</div>
+                                <div class="product-shop" style="color: #667eea; font-size: 0.85rem; margin-bottom: 8px;">
+                                    <small>by {{ product.market_agent.user.shop_name }}</small>
+                                </div>
+                                <div class="product-stock">
+                                    {% if product.quantity_available > 10 %}
+                                        <span class="stock-available">✓ In Stock</span>
+                                    {% elif product.quantity_available > 0 %}
+                                        <span class="stock-low">⚠ Low Stock ({{ product.quantity_available }})</span>
+                                    {% else %}
+                                        <span style="color: #dc3545;">✗ Out of Stock</span>
+                                    {% endif %}
+                                </div>
+                                <div class="product-actions">
+                                    <a href="{% url 'product_detail' product.id %}" class="btn-view">View</a>
+                                    <form method="post" action="{% url 'add_to_cart' product.id %}" style="flex: 1;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="quantity" value="1">
+                                        <button type="submit" class="btn-add-cart w-100" {% if product.quantity_available == 0 %}disabled{% endif %}>Add</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-info" role="alert">
+                    <i class="fas fa-info-circle"></i> 
+                    {% if query or selected_category or min_price or max_price %}
+                        <strong>No products found.</strong> Try adjusting your filters or search term.
+                    {% else %}
+                        <strong>Start searching</strong> to discover products and shops!
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

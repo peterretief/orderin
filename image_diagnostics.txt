@@ -1,0 +1,50 @@
+=== IMAGE LOADING DIAGNOSTICS ===
+Date: April 11, 2026
+
+✓ SERVER STATUS: Running on http://127.0.0.1:8009
+
+✓ DATABASE:
+  - Total Products: 268
+  - Vegetables: 60
+  - Fruits: 60  
+  - Dairy: 53
+  - Grains: 44
+  - Meat: 51
+  All products marked as available=True
+
+✓ IMAGE FILES:
+  - Location: /opt/orderin/media/products/
+  - Total files: 268
+  - Example: beef_steak_7.jpg (valid JPEG, 400x400px, 5.2KB)
+
+✓ API ENDPOINT:
+  - URL: http://127.0.0.1:8009/api/market/products/
+  - Status: 200 OK
+  - Returns: 268 products
+  - All products include image URLs like /media/products/beef_steak_7.jpg
+
+✓ IMAGE SERVING:
+  - Media URL configured: /media/
+  - Media root: /opt/orderin/media/
+  - Django serving images: YES (debug=true)
+  - Test request: 200 OK + image/jpeg content-type
+
+✓ FRONTEND CODE:
+  - Shop page: /shop/browse/
+  - JavaScript loads: YES
+  - Fetch API: YES
+  - Template rendering: YES
+
+IF IMAGES NOT SHOWING, TRY:
+1. Clear browser cache (Ctrl+Shift+Delete)
+2. Disable browser extensions
+3. Check JavaScript console (F12) for errors
+4. Try different browser
+5. Try incognito/private mode
+6. Verify you're logged in as a subscriber
+
+DIRECT TEST URLS:
+- Shop: http://127.0.0.1:8009/shop/browse/
+- API: http://127.0.0.1:8009/api/market/products/
+- Sample Image: http://127.0.0.1:8009/media/products/beef_steak_7.jpg
+

@@ -1,0 +1,74 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar with Categories -->
+        <div class="col-lg-2">
+            <div class="sidebar">
+                <h5 class="mb-3">📂 Categories</h5>
+                <a href="/shop/" class="category-link">All Products</a>
+                {% for cat in categories %}
+                <a href="{% url 'shop_category' cat.id %}" class="category-link {% if cat.id == category.id %}active{% endif %}">
+                    {{ cat.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <h2 class="section-title">🛒 {{ category.name }}</h2>
+            {% if category.description %}
+                <p class="text-muted mb-4">{{ category.description }}</p>
+            {% endif %}
+
+            <div class="row g-4">
+                {% for product in products %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-100 h-100" style="object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-box"></i>
+                            {% endif %}
+                        </div>
+                        <div class="product-info">
+                            <h5 class="product-name">{{ product.name }}</h5>
+                            <div class="product-price">{{ currency_symbol }}{{ product.price }}</div>
+                            <div class="product-unit">{{ product.unit }}</div>
+                            <div class="product-stock">
+                                {% if product.quantity_available > 10 %}
+                                    <span class="stock-available">✓ In Stock</span>
+                                {% elif product.quantity_available > 0 %}
+                                    <span class="stock-low">⚠ Low Stock</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">✗ Out of Stock</span>
+                                {% endif %}
+                            </div>
+                            <div class="product-actions">
+                                <a href="{% url 'product_detail' product.id %}" class="btn-view">View</a>
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" style="flex: 1;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn-add-cart w-100">Add</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No products found in this category.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

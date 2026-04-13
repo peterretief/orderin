@@ -1,0 +1,268 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}Bank Statement{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2><i class="fas fa-bank"></i> Bank Statement</h2>
+            <p class="text-muted">Complete transaction history showing money in and money out</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'business_account_dashboard' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-chart-pie"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body">
+                    <p class="card-title text-muted">Money In</p>
+                    <h3 class="text-success">R {{ total_in|floatformat:2 }}</h3>
+                    <small class="text-muted">Deposits + Fees</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-danger">
+                <div class="card-body">
+                    <p class="card-title text-muted">Money Out</p>
+                    <h3 class="text-danger">R {{ total_out|floatformat:2 }}</h3>
+                    <small class="text-muted">Purchases + Payouts + Refunds</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body">
+                    <p class="card-title text-muted">Net Change</p>
+                    <h3 class="{% if net_change >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        R {{ net_change|floatformat:2 }}
+                    </h3>
+                    <small class="text-muted">In - Out</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body">
+                    <p class="card-title text-muted">Current Balance</p>
+                    <h3 class="text-primary">R {{ current_balance|floatformat:2 }}</h3>
+                    <small class="text-muted">Account Balance</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-filter"></i> Filters</h5>
+        </div>
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-3">
+                    <label for="start_date" class="form-label">Start Date</label>
+                    <input type="date" class="form-control" id="start_date" name="start_date" value="{{ start_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="end_date" class="form-label">End Date</label>
+                    <input type="date" class="form-control" id="end_date" name="end_date" value="{{ end_date }}">
+                </div>
+                <div class="col-md-3">
+                    <label for="type" class="form-label">Transaction Type</label>
+                    <select class="form-select" id="type" name="type">
+                        <option value="">All Types</option>
+                        {% for type_key, type_label in transaction_types %}
+                            <option value="{{ type_key }}" {% if filter_type == type_key %}selected{% endif %}>
+                                {{ type_label }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label>&nbsp;</label>
+                    <div>
+                        <button type="submit" class="btn btn-primary w-100">Filter</button>
+                        <a href="{% url 'bank_statement' %}" class="btn btn-outline-secondary w-100 mt-2">Clear</a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transactions Table -->
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">
+                <i class="fas fa-list"></i> Transactions 
+                <span class="badge bg-secondary">{{ total_transactions }}</span>
+            </h5>
+        </div>
+        <div class="card-body">
+            {% if transactions %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th width="150">Date & Time</th>
+                                <th width="80">Direction</th>
+                                <th>Transaction Type</th>
+                                <th width="120">Amount</th>
+                                <th width="150">Balance After</th>
+                                <th>Description</th>
+                                <th width="120">Reference</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for txn in transactions %}
+                                <tr class="{% if txn.direction == 'in' %}table-success{% elif txn.direction == 'out' %}table-danger{% else %}table-info{% endif %}">
+                                    <td>
+                                        <small>
+                                            <strong>{{ txn.date|date:"M d, Y" }}</strong><br>
+                                            {{ txn.date|time:"H:i" }}
+                                        </small>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="{{ txn.direction_class }} fw-bold" title="{{ txn.direction }}">
+                                            {{ txn.direction_emoji }}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <a href="{% url 'transactions_by_type' txn.type_key %}" class="text-decoration-none">
+                                            {{ txn.type }}
+                                        </a>
+                                    </td>
+                                    <td class="text-end fw-bold">
+                                        {% if txn.direction == 'in' %}
+                                            <span class="text-success">+R {{ txn.amount|floatformat:2 }}</span>
+                                        {% elif txn.direction == 'out' %}
+                                            <span class="text-danger">-R {{ txn.amount|floatformat:2 }}</span>
+                                        {% else %}
+                                            <span class="text-info">{{ txn.amount|floatformat:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <small>R {{ txn.balance_after|floatformat:2 }}</small>
+                                    </td>
+                                    <td>
+                                        <small>{{ txn.description }}</small>
+                                    </td>
+                                    <td>
+                                        {% if txn.reference_id %}
+                                            <small class="text-muted">{{ txn.reference_id }}</small>
+                                        {% else %}
+                                            <small class="text-muted text-center">-</small>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot class="table-light fw-bold">
+                            <tr>
+                                <td colspan="3" class="text-end">TOTALS:</td>
+                                <td class="text-end">
+                                    <span class="text-success">+R {{ total_in|floatformat:2 }}</span> / 
+                                    <span class="text-danger">-R {{ total_out|floatformat:2 }}</span>
+                                </td>
+                                <td colspan="3"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No transactions found matching your filters.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Export Section -->
+    <div class="card mt-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-download"></i> Export Options</h5>
+        </div>
+        <div class="card-body">
+            <button class="btn btn-outline-primary" onclick="printStatement()">
+                <i class="fas fa-print"></i> Print Statement
+            </button>
+            <button class="btn btn-outline-secondary" onclick="exportToCSV()">
+                <i class="fas fa-file-csv"></i> Export to CSV
+            </button>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        border: 1px solid #dee2e6;
+    }
+    
+    .table-responsive {
+        border-radius: 0.25rem;
+    }
+    
+    .table th {
+        background-color: #f8f9fa;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.875rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .table-success {
+        background-color: rgba(40, 167, 69, 0.1) !important;
+    }
+    
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.1) !important;
+    }
+    
+    .table-info {
+        background-color: rgba(23, 162, 184, 0.1) !important;
+    }
+</style>
+
+<script>
+function printStatement() {
+    window.print();
+}
+
+function exportToCSV() {
+    const tables = document.querySelectorAll('table');
+    const table = tables[0]; // Get the transactions table
+    
+    let csv = [];
+    
+    // Add headers
+    const headers = [];
+    table.querySelectorAll('thead th').forEach(th => {
+        headers.push(th.textContent.trim());
+    });
+    csv.push(headers.join(','));
+    
+    // Add rows
+    table.querySelectorAll('tbody tr').forEach(tr => {
+        const row = [];
+        tr.querySelectorAll('td').forEach(td => {
+            row.push('"' + td.textContent.trim().replace(/"/g, '""') + '"');
+        });
+        csv.push(row.join(','));
+    });
+    
+    // Create and download file
+    const csvContent = 'data:text/csv;charset=utf-8,' + csv.join('\n');
+    const link = document.createElement('a');
+    link.setAttribute('href', encodeURI(csvContent));
+    link.setAttribute('download', 'bank-statement-' + new Date().toISOString().split('T')[0] + '.csv');
+    link.click();
+}
+</script>
+{% endblock %}

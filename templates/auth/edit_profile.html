@@ -1,0 +1,446 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }} - Order In{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2><i class="fas fa-user-circle"></i> Edit Profile</h2>
+                <p class="text-muted">Update your contact information and address</p>
+            </div>
+
+            <!-- Alert Messages -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-check-circle"></i> {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Profile Form Card -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-id-card"></i> 
+                        Account Information
+                        <span class="badge bg-primary float-end">{{ user_type }}</span>
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <h6 class="alert-heading">Form Error</h6>
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Full Name Section -->
+                        <h6 class="mb-3"><i class="fas fa-user"></i> Full Name</h6>
+
+                        <!-- First Name Field -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.first_name.id_for_label }}" class="form-label">
+                                        {{ form.first_name.label }}
+                                    </label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.first_name.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Last Name Field -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.last_name.id_for_label }}" class="form-label">
+                                        {{ form.last_name.label }}
+                                    </label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.last_name.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Contact Information Section -->
+                        <h6 class="mb-3"><i class="fas fa-phone"></i> Contact Information</h6>
+
+                        <!-- Email Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.email.id_for_label }}" class="form-label">
+                                {{ form.email.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.email.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> Your email address for account recovery and notifications
+                            </small>
+                        </div>
+
+                        <!-- Phone Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.phone.id_for_label }}" class="form-label">
+                                {{ form.phone.label }}
+                            </label>
+                            {{ form.phone }}
+                            {% if form.phone.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.phone.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> Used for delivery coordination and support
+                            </small>
+                        </div>
+
+                        <hr>
+
+                        <!-- Address Section -->
+                        <h6 class="mb-3"><i class="fas fa-map-marker-alt"></i> Location Information</h6>
+
+                        <!-- Address Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                {{ form.address.label }}
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.address.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- City Field -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.city.id_for_label }}" class="form-label">
+                                        {{ form.city.label }}
+                                    </label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.city.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted d-block mt-1">
+                                        <i class="fas fa-info-circle"></i> Required for accurate distance calculations
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- State Field -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.state.id_for_label }}" class="form-label">
+                                        {{ form.state.label }}
+                                    </label>
+                                    {{ form.state }}
+                                    {% if form.state.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.state.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Zip Code Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.zip_code.id_for_label }}" class="form-label">
+                                {{ form.zip_code.label }}
+                            </label>
+                            {{ form.zip_code }}
+                            {% if form.zip_code.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.zip_code.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <hr>
+
+                        <!-- Banking Information Section -->
+                        <h6 class="mb-3"><i class="fas fa-university"></i> Banking Information</h6>
+
+                        <!-- Bank Name Field -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_name.id_for_label }}" class="form-label">
+                                        {{ form.bank_name.label }}
+                                    </label>
+                                    {{ form.bank_name }}
+                                    {% if form.bank_name.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.bank_name.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Account Type Field -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.bank_account_type.id_for_label }}" class="form-label">
+                                        {{ form.bank_account_type.label }}
+                                    </label>
+                                    {{ form.bank_account_type }}
+                                    {% if form.bank_account_type.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.bank_account_type.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Account Holder Name Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.bank_account_holder_name.id_for_label }}" class="form-label">
+                                {{ form.bank_account_holder_name.label }}
+                            </label>
+                            {{ form.bank_account_holder_name }}
+                            {% if form.bank_account_holder_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.bank_account_holder_name.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Account Number Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.bank_account_number.id_for_label }}" class="form-label">
+                                {{ form.bank_account_number.label }}
+                            </label>
+                            {{ form.bank_account_number }}
+                            {% if form.bank_account_number.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.bank_account_number.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Branch Code Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.bank_branch_code.id_for_label }}" class="form-label">
+                                {{ form.bank_branch_code.label }}
+                            </label>
+                            {{ form.bank_branch_code }}
+                            {% if form.bank_branch_code.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.bank_branch_code.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading mb-2">
+                                <i class="fas fa-lightbulb"></i> Why We Need This Information
+                            </h6>
+                            <ul class="mb-0 small">
+                                <li><strong>Email:</strong> Account recovery, notifications, and order updates</li>
+                                <li><strong>Phone:</strong> Delivery coordination and customer support</li>
+                                <li><strong>Address & Location:</strong> Accurate delivery distance calculations and service area verification</li>
+                                <li><strong>Banking Information:</strong> Secure payout processing and payment settlements</li>
+                                {% if is_market_agent %}
+                                <li><strong>Business Information:</strong> Help customers find and understand your market</li>
+                                {% endif %}
+                            </ul>
+                        </div>
+
+                        {% if is_market_agent %}
+                        <hr>
+
+                        <!-- Business Information Section -->
+                        <h6 class="mb-3"><i class="fas fa-store"></i> Business Information</h6>
+
+                        <!-- Shop Name Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.shop_name.id_for_label }}" class="form-label">
+                                {{ form.shop_name.label }}
+                            </label>
+                            {{ form.shop_name }}
+                            {% if form.shop_name.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.shop_name.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> How your market/shop appears to customers
+                            </small>
+                        </div>
+
+                        <!-- Shop Description Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.shop_description.id_for_label }}" class="form-label">
+                                {{ form.shop_description.label }}
+                            </label>
+                            {{ form.shop_description }}
+                            {% if form.shop_description.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.shop_description.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                <i class="fas fa-info-circle"></i> Describe your products, services, and what makes your market special
+                            </small>
+                        </div>
+                        {% endif %}
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="{% url 'dashboard_home' %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-arrow-left"></i> Back to Dashboard
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Current Information Card -->
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0">
+                        <i class="fas fa-info-circle"></i> Current Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Username:</strong><br>
+                                <span class="text-muted">{{ request.user.username }}</span>
+                            </p>
+                            <p class="mb-2">
+                                <strong>Full Name:</strong><br>
+                                <span class="text-muted">{{ request.user.get_full_name }}</span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Account Type:</strong><br>
+                                <span class="badge bg-info">{{ user_type }}</span>
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-2">
+                                <strong>Member Since:</strong><br>
+                                <span class="text-muted">{{ request.user.created_at|date:"F d, Y" }}</span>
+                            </p>
+                            <p class="mb-0">
+                                <strong>Account Status:</strong><br>
+                                {% if request.user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                                {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 500;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.form-control, .form-select {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+    border-color: #5568d3;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+
+.badge {
+    padding: 0.35rem 0.65rem;
+    font-size: 0.85rem;
+}
+
+.alert {
+    border-radius: 4px;
+}
+</style>
+{% endblock %}

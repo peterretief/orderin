@@ -1,0 +1,205 @@
+{% extends 'dashboards/base.html' %}
+
+{% block title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">📊 Admin Dashboard</h2>
+
+<!-- Key Metrics Row -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card">
+            <p>Total Users</p>
+            <h3>{{ total_users }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <p>Total Revenue</p>
+            <h3>{{ currency_symbol }}{{ total_revenue }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <p>Total Orders</p>
+            <h3>{{ total_orders }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <p>Avg Order Value</p>
+            <h3>{{ currency_symbol }}{{ avg_order_value }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- User Statistics Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">User Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="userDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Order Status Distribution</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="orderStatusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Trend -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Revenue Trend (Last 7 Days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 350px;">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Statistics -->
+<div class="row">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📈 User Breakdown</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Subscribers:</strong> {{ subscribers }}</p>
+                <p><strong>Market Agents:</strong> {{ market_agents }}</p>
+                <p><strong>Service Agents:</strong> {{ service_agents }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">📦 Order Statistics</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Pending:</strong> {{ pending_orders }}</p>
+                <p><strong>Completed:</strong> {{ completed_orders }}</p>
+                <p><strong>Today's Revenue:</strong> {{ currency_symbol }}{{ today_revenue }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">💰 Financial Summary</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Total Revenue:</strong> {{ currency_symbol }}{{ total_revenue }}</p>
+                <p><strong>Avg Order Value:</strong> {{ currency_symbol }}{{ avg_order_value }}</p>
+                <p><strong>Total Orders:</strong> {{ total_orders }}</p>
+                <hr>
+                <a href="{% url 'business_account_dashboard' %}" class="btn btn-sm btn-primary me-2">
+                    <i class="fas fa-chart-pie"></i> Business Account
+                </a>
+                <a href="{% url 'bank_statement' %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-receipt"></i> Bank Statement
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // User Distribution Chart
+    const userCtx = document.getElementById('userDistributionChart').getContext('2d');
+    new Chart(userCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Subscribers', 'Market Agents', 'Service Agents'],
+            datasets: [{
+                data: [{{ order_status.pending }}, {{ userDistribution.market_agents }}, {{ userDistribution.service_agents }}],
+                backgroundColor: ['#667eea', '#f093fb', '#4facfe'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Order Status Chart
+    const statusCtx = document.getElementById('orderStatusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'Processing', 'Delivered', 'Cancelled'],
+            datasets: [{
+                data: [{{ order_status.pending }}, {{ order_status.processing }}, {{ order_status.delivered }}, {{ order_status.cancelled }}],
+                backgroundColor: ['#ffc107', '#17a2b8', '#28a745', '#dc3545'],
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Revenue Chart
+    const revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    new Chart(revenueCtx, {
+        type: 'line',
+        data: {
+            labels: {{ last_7_days|safe }},
+            datasets: [{
+                label: 'Daily Revenue (' + '{{ currency_symbol }}'.toString() + ')',
+                data: {{ daily_revenue|safe }},
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                pointBackgroundColor: '#667eea',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2,
+                pointRadius: 5,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: { callback: function(value) { return '{{ currency_symbol }}' + value; } }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

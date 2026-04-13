@@ -1,0 +1,4 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}Shop - Order In{% endblock %}

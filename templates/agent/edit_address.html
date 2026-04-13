@@ -1,0 +1,193 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <!-- Header -->
+            <div class="mb-4">
+                <h2><i class="fas fa-map-marker-alt"></i> Edit Store Address</h2>
+                <p class="text-muted">Update your store location for accurate delivery distance calculations</p>
+            </div>
+
+            <!-- Alert Messages -->
+            {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+            {% endif %}
+
+            <!-- Form Card -->
+            <div class="card shadow-sm">
+                <div class="card-body p-4">
+                    <form method="post" novalidate>
+                        {% csrf_token %}
+
+                        {% if form.non_field_errors %}
+                        <div class="alert alert-danger" role="alert">
+                            <h4 class="alert-heading">Form Error</h4>
+                            {% for error in form.non_field_errors %}
+                            <p class="mb-0">{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+
+                        <!-- Address Field -->
+                        <div class="mb-3">
+                            <label for="{{ form.address.id_for_label }}" class="form-label">
+                                {{ form.address.label }}
+                                <span class="text-danger">*</span>
+                            </label>
+                            {{ form.address }}
+                            {% if form.address.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.address.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <small class="form-text text-muted d-block mt-1">
+                                e.g., 123 Market Street, Shop 5, Building A
+                            </small>
+                        </div>
+
+                        <!-- City Field -->
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.city.id_for_label }}" class="form-label">
+                                        {{ form.city.label }}
+                                        <span class="text-danger">*</span>
+                                    </label>
+                                    {{ form.city }}
+                                    {% if form.city.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.city.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- State Field -->
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="{{ form.state.id_for_label }}" class="form-label">
+                                        {{ form.state.label }}
+                                    </label>
+                                    {{ form.state }}
+                                    {% if form.state.errors %}
+                                    <div class="text-danger small mt-1">
+                                        {% for error in form.state.errors %}
+                                        {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Zip Code Field -->
+                        <div class="mb-4">
+                            <label for="{{ form.zip_code.id_for_label }}" class="form-label">
+                                {{ form.zip_code.label }}
+                            </label>
+                            {{ form.zip_code }}
+                            {% if form.zip_code.errors %}
+                            <div class="text-danger small mt-1">
+                                {% for error in form.zip_code.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <!-- Info Box -->
+                        <div class="alert alert-info" role="alert">
+                            <h6 class="alert-heading mb-2">
+                                <i class="fas fa-lightbulb"></i> Why is this important?
+                            </h6>
+                            <p class="mb-0 small">
+                                Your store address is used to calculate real-time delivery distances and costs 
+                                when customers select home delivery for your products. Keeping it accurate ensures 
+                                correct delivery pricing.
+                            </p>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save"></i> Save Address
+                            </button>
+                            <a href="{% url 'agent_dashboard' %}" class="btn btn-outline-secondary btn-lg">
+                                <i class="fas fa-times"></i> Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Current Address Info -->
+            {% if market_agent.user.address %}
+            <div class="card mt-4">
+                <div class="card-header bg-light">
+                    <h6 class="mb-0"><i class="fas fa-check-circle text-success"></i> Current Address on File</h6>
+                </div>
+                <div class="card-body">
+                    <p class="mb-1">
+                        <strong>{{ market_agent.user.address }}</strong><br>
+                        {% if market_agent.user.city %}
+                        {{ market_agent.user.city }}
+                        {% endif %}
+                        {% if market_agent.user.state %}
+                        , {{ market_agent.user.state }}
+                        {% endif %}
+                        {% if market_agent.user.zip_code %}
+                        {{ market_agent.user.zip_code }}
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    font-weight: 500;
+    color: #333;
+}
+
+.form-control, .form-select {
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+}
+
+.btn-primary {
+    background-color: #667eea;
+    border-color: #667eea;
+}
+
+.btn-primary:hover {
+    background-color: #5568d3;
+    border-color: #5568d3;
+}
+
+.text-danger {
+    color: #dc3545;
+}
+</style>
+{% endblock %}

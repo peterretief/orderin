@@ -1,0 +1,105 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row">
+        <div class="col-md-6">
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 12px; padding: 40px; text-align: center; color: white;">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" alt="{{ product.name }}" style="max-width: 100%; height: auto; border-radius: 8px;">
+                {% else %}
+                    <div style="font-size: 5rem; margin: 40px 0;">
+                        <i class="fas fa-box"></i>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <h1 style="font-size: 2.5rem; font-weight: 700; color: #333; margin-bottom: 20px;">{{ product.name }}</h1>
+            
+            <div style="margin-bottom: 20px;">
+                <span style="background: #667eea; color: white; padding: 6px 12px; border-radius: 20px; font-size: 0.85rem;">
+                    {{ product.category }}
+                </span>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <div style="font-size: 0.9rem; color: #6c757d; margin-bottom: 10px;">From: <strong>{{ product.market_agent.user.shop_name }}</strong></div>
+                {% if product.description %}
+                    <p style="color: #666; font-size: 1.05rem;">{{ product.description }}</p>
+                {% endif %}
+            </div>
+
+            <div style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 30px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <span style="font-size: 0.9rem; color: #666;">Price:</span>
+                    <span style="font-size: 2rem; font-weight: bold; color: #667eea;">{{ currency_symbol }}{{ product.price }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.9rem; color: #666;">Unit:</span>
+                    <span style="font-size: 1.1rem; color: #333;">{{ product.unit }}</span>
+                </div>
+            </div>
+
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 30px;">
+                {% if product.quantity_available > 10 %}
+                    <span style="color: #28a745; font-weight: 600;">✓ In Stock ({{ product.quantity_available }} available)</span>
+                {% elif product.quantity_available > 0 %}
+                    <span style="color: #ffc107; font-weight: 600;">⚠ Low Stock ({{ product.quantity_available }} available)</span>
+                {% else %}
+                    <span style="color: #dc3545; font-weight: 600;">✗ Out of Stock</span>
+                {% endif %}
+            </div>
+
+            <form method="post" action="{% url 'add_to_cart' product.id %}" style="display: flex; gap: 10px; margin-bottom: 30px;">
+                {% csrf_token %}
+                <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity_available }}" style="width: 80px; padding: 10px; border: 1px solid #ddd; border-radius: 6px;">
+                <button type="submit" class="btn btn-lg" style="background: #667eea; color: white; flex: 1; border: none; border-radius: 6px; font-weight: 600;">
+                    <i class="fas fa-shopping-cart"></i> Add to Cart
+                </button>
+            </form>
+
+            <a href="javascript:history.back()" class="btn btn-outline-secondary w-100">
+                <i class="fas fa-arrow-left"></i> Back
+            </a>
+        </div>
+    </div>
+
+    {% if related_products %}
+    <div class="row mt-5">
+        <div class="col-12">
+            <h3 style="font-weight: 700; margin-bottom: 30px;">Related Products</h3>
+        </div>
+        {% for rel_product in related_products %}
+        <div class="col-md-6 col-lg-4 col-xl-3">
+            <div class="product-card">
+                <div class="product-image">
+                    {% if rel_product.image %}
+                        <img src="{{ rel_product.image.url }}" alt="{{ rel_product.name }}" class="w-100 h-100" style="object-fit: cover;">
+                    {% else %}
+                        <i class="fas fa-box"></i>
+                    {% endif %}
+                </div>
+                <div class="product-info">
+                    <h5 class="product-name">{{ rel_product.name }}</h5>
+                    <div class="product-price">{{ currency_symbol }}{{ rel_product.price }}</div>
+                    <div class="product-unit">{{ rel_product.unit }}</div>
+                    <div class="product-actions">
+                        <a href="{% url 'product_detail' rel_product.id %}" class="btn-view">View</a>
+                        <form method="post" action="{% url 'add_to_cart' rel_product.id %}" style="flex: 1;">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add-cart w-100">Add</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

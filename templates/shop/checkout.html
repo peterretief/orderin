@@ -1,0 +1,44 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Checkout - Order In{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div style="background: white; border-radius: 12px; padding: 60px 40px; text-align: center; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 600px; margin: 0 auto;">
+        <div style="font-size: 5rem; color: #dc3545; margin-bottom: 20px;">
+            <i class="fas fa-exclamation-circle"></i>
+        </div>
+        
+        <h1 style="font-size: 2.5rem; font-weight: 700; color: #333; margin-bottom: 15px;">Checkout Error</h1>
+        
+        {% if error %}
+        <div style="background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; padding: 15px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+            <p style="margin: 0; font-weight: 500;">{{ error }}</p>
+        </div>
+        {% endif %}
+
+        <div style="background: #f8f9fa; padding: 25px; border-radius: 8px; margin-bottom: 30px; text-align: left;">
+            <div style="margin-bottom: 20px;">
+                <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Order Total</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #333;">{{ currency_symbol }}{{ total }}</div>
+            </div>
+
+            <div style="margin-bottom: 0;">
+                <div style="font-size: 0.85rem; color: #666; margin-bottom: 5px;">Current Balance</div>
+                <div style="font-size: 1.5rem; font-weight: bold; color: #667eea;">{{ currency_symbol }}{{ current_balance }}</div>
+            </div>
+        </div>
+
+        <p style="color: #666; margin-bottom: 30px;">You need to add funds to your account before completing this purchase.</p>
+
+        <div style="display: flex; gap: 15px; flex-direction: column;">
+            <a href="/dashboards/subscriber/" class="btn btn-lg" style="background: #667eea; color: white; border: none; font-weight: 600; padding: 12px 30px; border-radius: 6px; text-decoration: none; display: inline-block;">
+                <i class="fas fa-wallet"></i> Add Funds to Account
+            </a>
+            <a href="/shop/cart/" class="btn btn-outline-secondary btn-lg" style="padding: 12px 30px; border-radius: 6px; text-decoration: none; display: inline-block;">
+                <i class="fas fa-arrow-left"></i> Back to Cart
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

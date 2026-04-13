@@ -1,0 +1,251 @@
+{% extends "dashboards/base.html" %}
+{% load static %}
+
+{% block title %}Business Account Dashboard - Order In Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="mb-1">💰 Business Account Dashboard</h2>
+            <p class="text-muted">Central account tracking all transactions</p>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'bank_statement' %}" class="btn btn-primary">
+                <i class="fas fa-receipt"></i> Bank Statement
+            </a>
+        </div>
+    </div>
+
+    <!-- Account Status Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Account Status</h6>
+                    <h4>
+                        {% if account.status == 'active' %}
+                            <span class="badge bg-success">{{ account.status|upper }}</span>
+                        {% else %}
+                            <span class="badge bg-danger">{{ account.status|upper }}</span>
+                        {% endif %}
+                    </h4>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Current Balance</h6>
+                    <h3 style="color: #667eea; font-weight: bold;">R {{ account.total_balance|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Money In</h6>
+                    <h3 style="color: #28a745; font-weight: bold;">+R {{ total_in|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title text-muted">Money Out</h6>
+                    <h3 style="color: #dc3545; font-weight: bold;">-R {{ total_out|floatformat:2 }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">7-Day Transaction Trend</div>
+                <div class="card-body">
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="transactionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Summary by Type -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">Transaction Summary</div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Count</th>
+                                    <th>Total Amount</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for type_key, summary in transaction_summary.items %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ summary.label }}</strong>
+                                        {% if type_key in 'subscriber_deposit,admin_fee' %}
+                                            <span class="badge bg-success ms-2">IN</span>
+                                        {% else %}
+                                            <span class="badge bg-danger ms-2">OUT</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ summary.count }}</td>
+                                    <td style="font-weight: bold; color: #667eea;">R {{ summary.total|floatformat:2 }}</td>
+                                    <td>
+                                        <a href="{% url 'transactions_by_type' type_key %}" class="btn btn-sm btn-outline-primary">
+                                            View All
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Transactions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    Recent Transactions 
+                    <span class="badge bg-info float-end">{{ total_transactions }} total</span>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Type</th>
+                                    <th>Description</th>
+                                    <th>Amount</th>
+                                    <th>Balance After</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in recent_transactions %}
+                                <tr>
+                                    <td><small>{{ transaction.created_at|date:"Y-m-d H:i" }}</small></td>
+                                    <td>
+                                        {% if transaction.type in 'subscriber_deposit,admin_fee' %}
+                                            <span class="badge bg-success">{{ transaction.get_type_display|truncatewords:2 }}</span>
+                                        {% else %}
+                                            <span class="badge bg-danger">{{ transaction.get_type_display|truncatewords:2 }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td><small>{{ transaction.description|truncatewords:10 }}</small></td>
+                                    <td style="font-weight: bold;">R {{ transaction.amount|floatformat:2 }}</td>
+                                    <td><small style="color: #667eea;">R {{ transaction.balance_after|floatformat:2 }}</small></td>
+                                    <td>
+                                        <a href="{% url 'transaction_detail' transaction.id %}" class="btn btn-xs btn-outline-info" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">
+                                            Details
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">No transactions yet</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('transactionChart').getContext('2d');
+    const labels = {{ last_7_days|safe }};
+    const dataIn = {{ daily_in|safe }};
+    const dataOut = {{ daily_out|safe }};
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: labels,
+            datasets: [
+                {
+                    label: 'Money In',
+                    data: dataIn,
+                    borderColor: '#28a745',
+                    backgroundColor: 'rgba(40, 167, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#28a745'
+                },
+                {
+                    label: 'Money Out',
+                    data: dataOut,
+                    borderColor: '#dc3545',
+                    backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#dc3545'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R ' + value.toFixed(2);
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.table-responsive {
+    overflow-x: auto;
+}
+.badge {
+    font-size: 0.85rem;
+    padding: 0.35rem 0.65rem;
+}
+</style>
+{% endblock %}

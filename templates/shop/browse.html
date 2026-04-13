@@ -1,0 +1,76 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}Shop - Order In{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <!-- Search Bar -->
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto">
+            <form method="get" action="{% url 'shop_search' %}" class="input-group input-group-lg">
+                <input type="text" name="q" class="form-control" placeholder="Search for products or shops..." required>
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Search
+                </button>
+            </form>
+            <small class="text-muted d-block mt-2">Try searching: "apple", "organic", "fresh", or shop names</small>
+        </div>
+    </div>
+
+    <h1>Shopping Marketplace</h1>
+    <p>Available products: {{ products|length }}</p>
+
+    {% if products %}
+        <div class="row">
+            {% for product in products %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100">
+                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover; background-color: #eee;">
+                        <div class="card-body">
+                            <h5 class="card-title">{{ product.name }}</h5>
+                            <p class="card-text text-muted"><small>{{ product.category.name }}</small></p>
+                            <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                            <div class="mb-3">
+                                <strong>{{ currency_symbol }}{{ product.price|floatformat:2 }} / {{ product.unit }}</strong>
+                                {% if product.quantity_available > 0 %}
+                                    <br><span class="badge bg-success">In Stock ({{ product.quantity_available }})</span>
+                                {% else %}
+                                    <br><span class="badge bg-danger">Out of Stock</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer bg-white">
+                            {% if product.quantity_available > 0 %}
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity_available }}" class="form-control">
+                                        <button type="submit" class="btn btn-primary btn-sm">Add to Cart</button>
+                                    </div>
+                                </form>
+                            {% else %}
+                                <button class="btn btn-secondary btn-sm w-100" disabled>Out of Stock</button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <p>No products available.</p>
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.card {
+    transition: transform 0.2s;
+}
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+</style>
+{% endblock %}

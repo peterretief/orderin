@@ -1,0 +1,182 @@
+{% extends "dashboards/base.html" %}
+
+{% block title %}Service Agent Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <h2 class="mb-4">
+            {% if service_type == 'catering' %}
+                🍽️ Catering Service Dashboard
+            {% else %}
+                🚚 Delivery Service Dashboard
+            {% endif %}
+        </h2>
+    </div>
+</div>
+
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ total_bookings }}</div>
+            <div class="stat-label">Total Bookings</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ completed_bookings }}</div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ currency_symbol }}{{ total_revenue }}</div>
+            <div class="stat-label">Total Earned</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card stat-card">
+            <div class="stat-value">{{ rating }}⭐</div>
+            <div class="stat-label">Rating</div>
+        </div>
+    </div>
+</div>
+
+<!-- Booking Trends and Status -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">7-Day Booking Trend</div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="bookingChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">Booking Status</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <tbody>
+                            <tr>
+                                <td><strong>Total Bookings</strong></td>
+                                <td><span class="badge bg-primary">{{ total_bookings }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Completed</strong></td>
+                                <td><span class="badge bg-success">{{ completed_bookings }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Pending/Processing</strong></td>
+                                <td><span class="badge bg-warning">{{ pending_bookings }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Revenue</strong></td>
+                                <td><span class="badge bg-success">{{ currency_symbol }}{{ total_revenue }}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Bookings -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header">Recent Bookings</div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Service Cost</th>
+                                <th>Order Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for booking in recent_bookings %}
+                            <tr>
+                                <td>#{{ booking.order.id }}</td>
+                                <td>{{ booking.order.created_at|date:"M d, Y" }}</td>
+                                <td>{{ currency_symbol }}{{ booking.price }}</td>
+                                <td>
+                                    {% if booking.order.status == 'delivered' %}
+                                        <span class="badge bg-success">Delivered</span>
+                                    {% elif booking.order.status == 'processing' %}
+                                        <span class="badge bg-info">Processing</span>
+                                    {% elif booking.order.status == 'pending' %}
+                                        <span class="badge bg-warning">Pending</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">{{ booking.order.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="/admin/orders/order/{{ booking.order.id }}/change/" class="btn btn-sm btn-primary">View</a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center text-muted">No bookings yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // 7-Day Booking Trend
+    const bookingCtx = document.getElementById('bookingChart').getContext('2d');
+    new Chart(bookingCtx, {
+        type: 'line',
+        data: {
+            labels: {{ last_7_days|safe }},
+            datasets: [{
+                label: 'Bookings',
+                data: {{ daily_bookings|safe }},
+                borderColor: '#764ba2',
+                backgroundColor: 'rgba(118, 75, 162, 0.1)',
+                borderWidth: 3,
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointBackgroundColor: '#764ba2',
+                pointBorderColor: '#fff',
+                pointBorderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

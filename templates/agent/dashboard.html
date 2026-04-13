@@ -1,0 +1,119 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}Agent Dashboard - Order In{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Market Agent Dashboard</h1>
+    <p class="text-muted">Manage your products and track sales</p>
+
+    <!-- Stats -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-primary">{{ total_products }}</h3>
+                    <p class="text-muted">Total Products</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-success">{{ total_stock }}</h3>
+                    <p class="text-muted">Items in Stock</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-info">{{ total_items_sold }}</h3>
+                    <p class="text-muted">Items Sold</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card">
+                <div class="card-body text-center">
+                    <h3 class="text-warning">{{ currency_symbol }}{{ total_sales|floatformat:2 }}</h3>
+                    <p class="text-muted">Total Sales</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <a href="{% url 'upload_products' %}" class="btn btn-primary">
+                        <i class="fas fa-plus"></i> Upload New Product
+                    </a>
+                    <a href="{% url 'my_products' %}" class="btn btn-info">
+                        <i class="fas fa-list"></i> View All Products
+                    </a>
+                    <a href="{% url 'market_agent_statement' %}" class="btn btn-success">
+                        <i class="fas fa-chart-line"></i> My Earnings & Payouts
+                    </a>
+                    <a href="{% url 'edit_agent_address' %}" class="btn btn-warning">
+                        <i class="fas fa-map-marker-alt"></i> Edit Store Address
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Products Table -->
+    {% if products %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Your Products</h5>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Product Name</th>
+                            <th>Category</th>
+                            <th>Price</th>
+                            <th>Stock</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category.name }}</td>
+                            <td>{{ currency_symbol }}{{ product.price }}</td>
+                            <td>{{ product.quantity_available }} {{ product.unit }}</td>
+                            <td>
+                                {% if product.is_available %}
+                                    <span class="badge badge-success">Available</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Unavailable</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary">Edit</button>
+                                <button class="btn btn-sm btn-outline-danger">Delete</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="alert alert-info">
+        No products yet. <a href="{% url 'upload_products' %}">Upload your first product</a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

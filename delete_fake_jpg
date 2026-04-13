@@ -1,0 +1,8 @@
+#!/bin/bash
+for f in *.jpg; do
+    # Check if the file is identified as HTML
+    if file --mime-type "$f" | grep -q "text/html"; then
+        echo "Deleting fake JPG: $f"
+        rm "$f"
+    fi
+done

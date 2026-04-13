@@ -1,0 +1,550 @@
+{% extends "dashboards/base.html" %}
+{% load static %}
+
+{% block title %}Delivery Agent Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <h2 class="mb-4">
+                🚚 Delivery Agent Dashboard
+            </h2>
+        </div>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value">{{ total_deliveries }}</div>
+                <div class="stat-label">Total Deliveries</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value">{{ in_progress_deliveries }}</div>
+                <div class="stat-label">In Progress</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value">{{ completed_deliveries }}</div>
+                <div class="stat-label">Completed</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card stat-card">
+                <div class="stat-value">{{ currency_symbol }}{{ total_earnings }}</div>
+                <div class="stat-label">Total Earned</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Assignments Alert -->
+    {% if pending_assignments %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="alert alert-warning alert-dismissible fade show" role="alert">
+                <strong>⏳ Pending Assignments:</strong> You have {{ pending_assignments.count }} new delivery assignments. 
+                <a href="#pending-assignments" class="alert-link">View and accept</a>
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Main Content Tabs -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <ul class="nav nav-tabs" id="deliveryTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="today-tab" data-bs-toggle="tab" data-bs-target="#today" type="button">
+                        📅 Today's Deliveries
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="assigned-tab" data-bs-toggle="tab" data-bs-target="#assigned" type="button">
+                        📋 Assigned
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="inprogress-tab" data-bs-toggle="tab" data-bs-target="#inprogress" type="button">
+                        🔄 In Progress
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="vehicle-tab" data-bs-toggle="tab" data-bs-target="#vehicle" type="button">
+                        🚗 My Vehicle
+                    </button>
+                </li>
+            </ul>
+
+            <div class="tab-content" id="deliveryTabContent">
+                <!-- Today's Deliveries -->
+                <div class="tab-pane fade show active" id="today" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Today's Deliveries ({{ today_deliveries.count }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if today_deliveries %}
+                                <div class="list-group">
+                                    {% for assignment in today_deliveries %}
+                                    <a href="#delivery-{{ assignment.id }}" class="list-group-item list-group-item-action">
+                                        <div class="d-flex w-100 justify-content-between align-items-center">
+                                            <div>
+                                                <h6 class="mb-1">Order #{{ assignment.order_delivery.order.id }}</h6>
+                                                <p class="mb-1 text-muted">
+                                                    <strong>Method:</strong>
+                                                    {% if assignment.order_delivery.delivery_method.method_type == 'collection' %}
+                                                        <span class="badge bg-info">Customer Pickup</span>
+                                                    {% elif assignment.order_delivery.delivery_method.method_type == 'delivery' %}
+                                                        <span class="badge bg-primary">Home Delivery</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Collection Point</span>
+                                                    {% endif %}
+                                                </p>
+                                                <small class="text-muted">
+                                                    {% if assignment.order_delivery.delivery_address %}
+                                                        📍 {{ assignment.order_delivery.delivery_address }}, {{ assignment.order_delivery.delivery_city }}
+                                                    {% elif assignment.order_delivery.collection_point %}
+                                                        📍 {{ assignment.order_delivery.collection_point.name }}
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                            <div class="text-end">
+                                                <span class="badge bg-{{ assignment.get_assignment_status_badge }}">
+                                                    {{ assignment.get_assignment_status_display }}
+                                                </span>
+                                                <div class="mt-2">
+                                                    <small class="text-muted">{{ assignment.assigned_at|date:"H:i" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info" role="alert">
+                                    ✅ No deliveries scheduled for today
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Assigned Deliveries (Pending and Accepted) -->
+                <div class="tab-pane fade" id="assigned" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">Assigned Deliveries ({{ assigned_deliveries.count }})</h5>
+                            <small class="text-muted">Ready to start</small>
+                        </div>
+                        <div class="card-body">
+                            {% if assigned_deliveries %}
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>Order ID</th>
+                                                <th>Delivery Method</th>
+                                                <th>Location</th>
+                                                <th>Status</th>
+                                                <th>Cold Chain</th>
+                                                <th>Action</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for assignment in assigned_deliveries %}
+                                            <tr>
+                                                <td>
+                                                    <strong>#{{ assignment.order_delivery.order.id }}</strong>
+                                                </td>
+                                                <td>
+                                                    {% if assignment.order_delivery.delivery_method.method_type == 'collection' %}
+                                                        <span class="badge bg-info">Pickup</span>
+                                                    {% elif assignment.order_delivery.delivery_method.method_type == 'delivery' %}
+                                                        <span class="badge bg-primary">Delivery</span>
+                                                    {% else %}
+                                                        <span class="badge bg-warning">Collection Point</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if assignment.order_delivery.delivery_address %}
+                                                        <small>{{ assignment.order_delivery.delivery_address|truncatewords:4 }}</small>
+                                                    {% elif assignment.order_delivery.collection_point %}
+                                                        <small>{{ assignment.order_delivery.collection_point.name }}</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-secondary">
+                                                        {{ assignment.get_assignment_status_display }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    {% if assignment.order_delivery.cold_chain_requirement %}
+                                                        <small class="text-info">❄️ Yes</small>
+                                                    {% else %}
+                                                        <small class="text-muted">-</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% if assignment.assignment_status == 'assigned' %}
+                                                        <form method="post" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-success" 
+                                                                    formaction="{% url 'accept-delivery-assignment' assignment.id %}">Accept</button>
+                                                        </form>
+                                                        <form method="post" style="display: inline;">
+                                                            {% csrf_token %}
+                                                            <button type="submit" class="btn btn-sm btn-danger" 
+                                                                    formaction="{% url 'reject-delivery-assignment' assignment.id %}">Reject</button>
+                                                        </form>
+                                                    {% else %}
+                                                        <a href="{% url 'delivery-assignment-detail' assignment.id %}" class="btn btn-sm btn-info">View</a>
+                                                    {% endif %}
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            {% else %}
+                                <div class="alert alert-info" role="alert">
+                                    No assigned deliveries
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- In Progress Deliveries with Tracking -->
+                <div class="tab-pane fade" id="inprogress" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">In Progress Deliveries ({{ in_progress_deliveries }})</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if in_progress %}
+                                {% for assignment in in_progress %}
+                                <div class="card mb-3 border-primary">
+                                    <div class="card-header bg-primary text-white">
+                                        <div class="d-flex justify-content-between">
+                                            <h6 class="mb-0">Order #{{ assignment.order_delivery.order.id }}</h6>
+                                            <span class="badge bg-light text-dark">
+                                                {{ assignment.get_assignment_status_display }}
+                                            </span>
+                                        </div>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p class="mb-2">
+                                                    <strong>Destination:</strong><br>
+                                                    {% if assignment.order_delivery.delivery_address %}
+                                                        {{ assignment.order_delivery.delivery_address }}<br>
+                                                        {{ assignment.order_delivery.delivery_city }}, {{ assignment.order_delivery.delivery_state }}
+                                                    {% elif assignment.order_delivery.collection_point %}
+                                                        {{ assignment.order_delivery.collection_point.name }}<br>
+                                                        {{ assignment.order_delivery.collection_point.address }}
+                                                    {% endif %}
+                                                </p>
+                                                <p class="mb-2">
+                                                    <strong>Estimated Arrival:</strong><br>
+                                                    {% if assignment.order_delivery.estimated_delivery_time %}
+                                                        {{ assignment.order_delivery.estimated_delivery_time|date:"M d, H:i" }}
+                                                    {% else %}
+                                                        Not set
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <!-- Cold Chain Tracking -->
+                                                {% if assignment.delivery_tracking %}
+                                                <div class="alert alert-info mb-0">
+                                                    <strong>🌡️ Cold Chain Status:</strong><br>
+                                                    Current Temp: 
+                                                    {% if assignment.delivery_tracking.current_temperature %}
+                                                        {{ assignment.delivery_tracking.current_temperature }}°{{ assignment.delivery_tracking.temperature_unit }}
+                                                    {% else %}
+                                                        Not recorded
+                                                    {% endif %}<br>
+                                                    Status: 
+                                                    {% if assignment.delivery_tracking.vehicle_temperature_status == 'optimal' %}
+                                                        <span class="badge bg-success">Optimal</span>
+                                                    {% elif assignment.delivery_tracking.vehicle_temperature_status == 'warning' %}
+                                                        <span class="badge bg-warning">Warning</span>
+                                                    {% else %}
+                                                        <span class="badge bg-danger">Critical</span>
+                                                    {% endif %}
+                                                </div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+
+                                        <hr>
+
+                                        <div class="row">
+                                            <div class="col-md-12">
+                                                <p class="mb-2">
+                                                    <strong>Vehicle:</strong> 
+                                                    {% if assignment.assigned_vehicle %}
+                                                        {{ assignment.assigned_vehicle.vehicle_type }} 
+                                                        ({{ assignment.assigned_vehicle.registration_number }})
+                                                    {% else %}
+                                                        Not assigned
+                                                    {% endif %}
+                                                </p>
+                                                <strong>Actions:</strong><br>
+                                                <a href="{% url 'delivery-assignment-detail' assignment.id %}" class="btn btn-sm btn-info mt-2">View Details</a>
+                                                <a href="{% url 'update-tracking' assignment.id %}" class="btn btn-sm btn-warning mt-2">Update Tracking</a>
+                                                <form method="post" style="display: inline;">
+                                                    {% csrf_token %}
+                                                    <button type="submit" class="btn btn-sm btn-success mt-2" 
+                                                            formaction="{% url 'complete-delivery' assignment.id %}">Mark Complete</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info" role="alert">
+                                    No deliveries currently in progress
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Vehicle Information -->
+                <div class="tab-pane fade" id="vehicle" role="tabpanel">
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="mb-0">My Vehicle Information</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if vehicles %}
+                                {% for vehicle in vehicles %}
+                                <div class="card mb-3">
+                                    <div class="card-header">
+                                        <h6 class="mb-0">
+                                            🚗 {{ vehicle.vehicle_type }} - {{ vehicle.registration_number }}
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p><strong>Make/Model:</strong> {{ vehicle.vehicle_make_model }}</p>
+                                                <p><strong>Weight Capacity:</strong> {{ vehicle.max_weight_capacity }} kg</p>
+                                                <p><strong>Volume Capacity:</strong> {{ vehicle.max_volume_capacity }} L</p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p>
+                                                    <strong>Temperature Control:</strong>
+                                                    {% if vehicle.has_temperature_control %}
+                                                        ✅ Yes ({{ vehicle.min_temp_capability }}°-{{ vehicle.max_temp_capability }}°{{ vehicle.temperature_unit }})
+                                                    {% else %}
+                                                        ❌ No
+                                                    {% endif %}
+                                                </p>
+                                                <p>
+                                                    <strong>GPS Tracking:</strong>
+                                                    {% if vehicle.has_gps_tracking %}✅ Yes{% else %}❌ No{% endif %}
+                                                </p>
+                                                <p>
+                                                    <strong>Temperature Sensor:</strong>
+                                                    {% if vehicle.has_temperature_sensor %}✅ Yes{% else %}❌ No{% endif %}
+                                                </p>
+                                                <p>
+                                                    <strong>Humidity Sensor:</strong>
+                                                    {% if vehicle.has_humidity_sensor %}✅ Yes{% else %}❌ No{% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <hr>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <p>
+                                                    <strong>Last Maintenance:</strong>
+                                                    {% if vehicle.maintenance_due_date %}
+                                                        Due: {{ vehicle.maintenance_due_date|date:"M d, Y" }}
+                                                    {% else %}
+                                                        Not scheduled
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <p>
+                                                    <strong>Last Sanitization:</strong>
+                                                    {% if vehicle.last_sanitization_date %}
+                                                        {{ vehicle.last_sanitization_date|date:"M d, Y" }}
+                                                    {% else %}
+                                                        Not recorded
+                                                    {% endif %}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {% if not vehicle.is_active %}
+                                        <div class="alert alert-warning mt-3">
+                                            ⚠️ This vehicle is currently inactive
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="alert alert-info" role="alert">
+                                    No vehicle assigned yet. Contact your manager to assign a vehicle.
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics and Trends -->
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">7-Day Delivery Trend</div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="deliveryTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header">Performance Metrics</div>
+                <div class="card-body">
+                    <table class="table table-sm">
+                        <tbody>
+                            <tr>
+                                <td><strong>Rating</strong></td>
+                                <td class="text-end"><span class="badge bg-warning">{{ rating }}⭐</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Completed</strong></td>
+                                <td class="text-end"><span class="badge bg-success">{{ completed_deliveries }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Completion Rate</strong></td>
+                                <td class="text-end">
+                                    {% if total_deliveries > 0 %}
+                                        <span class="badge bg-info">{{ completion_rate }}%</span>
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>This Month</strong></td>
+                                <td class="text-end"><span class="badge bg-primary">{{ monthly_deliveries }}</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.stat-card {
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-value {
+    font-size: 2.5rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.stat-label {
+    font-size: 1rem;
+    opacity: 0.9;
+}
+
+.chart-container {
+    position: relative;
+    height: 300px;
+    margin: 0 auto;
+}
+
+.nav-tabs {
+    border-bottom: 2px solid #e9ecef !important;
+}
+
+.nav-tabs .nav-link {
+    border: none;
+    color: #6c757d;
+    font-weight: 500;
+    padding: 1rem 1.5rem;
+}
+
+.nav-tabs .nav-link.active {
+    border-bottom: 3px solid #667eea;
+    color: #667eea;
+    background-color: transparent;
+}
+
+.nav-tabs .nav-link:hover {
+    color: #667eea;
+    border-color: transparent;
+}
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+// Delivery Trend Chart
+const ctx = document.getElementById('deliveryTrendChart');
+if (ctx) {
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ last_7_days|safe }},
+            datasets: [{
+                label: 'Deliveries Completed',
+                data: {{ daily_deliveries|safe }},
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                fill: true,
+                tension: 0.4,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointBackgroundColor: '#667eea',
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: true,
+                    position: 'top',
+                },
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+}
+</script>
+{% endblock %}

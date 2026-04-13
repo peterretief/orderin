@@ -1,0 +1,335 @@
+{% extends 'dashboards/base.html' %}
+
+{% block title %}Subscriber Dashboard{% endblock %}
+
+{% block content %}
+<h2 class="mb-4">👤 My Dashboard</h2>
+
+<!-- Shop CTA -->
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <strong><i class="fas fa-shopping-cart"></i> Ready to Shop?</strong>
+    <p class="mb-0 mt-2">Browse our marketplace with {{ total_products }} products available!</p>
+    <a href="{% url 'shop_browse' %}" class="btn btn-primary btn-sm mt-2">
+        <i class="fas fa-store"></i> Go to Shop
+    </a>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+
+<!-- Balance and Order Summary -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+            <p>Account Balance</p>
+            <h3>{{ currency_symbol }}{{ current_balance }}</h3>
+            <button class="btn btn-sm btn-light mt-2" data-bs-toggle="modal" data-bs-target="#addFundsModal">
+                <i class="fas fa-plus"></i> Add Funds
+            </button>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <p>Total Orders</p>
+            <h3>{{ total_orders }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+            <p>Completed Orders</p>
+            <h3>{{ completed_orders }}</h3>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="metric-card" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+            <p>Total Spent</p>
+            <h3>{{ currency_symbol }}{{ total_spent }}</h3>
+        </div>
+    </div>
+</div>
+
+<!-- Spending by Category & Recent Orders -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Spending by Category (30 days)</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Recent Orders</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Date</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for order in recent_orders %}
+                            <tr>
+                                <td>#{{ order.id }}</td>
+                                <td>{{ order.created_at|date:"M d" }}</td>
+                                <td>{{ currency_symbol }}{{ order.total_amount }}</td>
+                                <td>
+                                    <span class="badge status-{{ order.status }}">{{ order.get_status_display }}</span>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center text-muted">No orders yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Transaction History -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">💳 Recent Transactions (Last 10)</h5>
+                <a href="{% url 'transaction_history' %}" class="btn btn-sm btn-outline-primary">
+                    View Full History →
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Description</th>
+                                <th>Amount</th>
+                                <th>Balance After</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for transaction in transactions %}
+                            <tr>
+                                <td>{{ transaction.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    {% if transaction.type == 'credit' %}
+                                        <span class="badge bg-success">Credit</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">Debit</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ transaction.description|truncatewords:5 }}</td>
+                                <td>
+                                    {% if transaction.type == 'credit' %}
+                                        <span style="color: #4caf50;">+{{ currency_symbol }}{{ transaction.amount }}</span>
+                                    {% else %}
+                                        <span style="color: #f44336;">-{{ currency_symbol }}{{ transaction.amount }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ currency_symbol }}{{ transaction.balance_after }}</td>
+                                <td>
+                                    <a href="{% url 'transaction_receipt' transaction.id %}" 
+                                       class="btn btn-xs btn-link"
+                                       title="Download Receipt">
+                                        📄
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">No transactions yet</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Spending by Category Chart
+    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    new Chart(categoryCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ categories|safe }},
+            datasets: [{
+                label: 'Spending (' + '{{ currency_symbol }}'.toString() + ')',
+                data: {{ spending|safe }},
+                backgroundColor: [
+                    '#667eea',
+                    '#764ba2',
+                    '#f093fb',
+                    '#f5576c',
+                    '#4facfe',
+                ],
+                borderRadius: 5,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    ticks: { callback: function(value) { return '{{ currency_symbol }}' + value; } }
+                }
+            }
+        }
+    });
+</script>
+
+<!-- Add Funds Modal -->
+<div class="modal fade" id="addFundsModal" tabindex="-1" aria-labelledby="addFundsModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addFundsModalLabel">Add Funds to Account</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="fundsMessage" class="alert d-none" role="alert"></div>
+                <form id="addFundsForm">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="fundsAmount" class="form-label">Amount (R 0.01 - R 1,000,000)</label>
+                        <input type="number" class="form-control" id="fundsAmount" placeholder="0.00" 
+                               min="0.01" max="1000000" step="0.01" required>
+                        <small class="text-muted d-block mt-2">
+                            <strong>Limits:</strong> Minimum R 0.01, Maximum R 1,000,000 per transaction
+                        </small>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        <i class="fas fa-info-circle"></i> You can add funds up to 10 times per hour
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="addFundsBtn" onclick="submitAddFunds()">
+                    <i class="fas fa-check"></i> Add Funds
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function submitAddFunds() {
+    const amount = document.getElementById('fundsAmount').value;
+    const messageDiv = document.getElementById('fundsMessage');
+    const addFundsBtn = document.getElementById('addFundsBtn');
+    
+    // Validation
+    if (!amount || parseFloat(amount) <= 0) {
+        messageDiv.textContent = 'Please enter a valid amount';
+        messageDiv.className = 'alert alert-danger';
+        messageDiv.classList.remove('d-none');
+        return;
+    }
+    
+    if (parseFloat(amount) > 1000000) {
+        messageDiv.textContent = 'Amount exceeds maximum limit of R 1,000,000';
+        messageDiv.className = 'alert alert-danger';
+        messageDiv.classList.remove('d-none');
+        return;
+    }
+    
+    // Disable button and show loading
+    addFundsBtn.disabled = true;
+    addFundsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+    messageDiv.classList.add('d-none');
+    
+    // Send request to add funds endpoint
+    fetch('/api/billing/balance/add_funds/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+        },
+        body: JSON.stringify({ amount: parseFloat(amount) })
+    })
+    .then(response => {
+        // Try to parse JSON response
+        return response.json().then(data => ({
+            ok: response.ok,
+            status: response.status,
+            data: data
+        }));
+    })
+    .then(result => {
+        if (result.ok) {
+            messageDiv.textContent = 'Funds added successfully! Your new balance is R ' + (result.data.balance || amount);
+            messageDiv.className = 'alert alert-success';
+            messageDiv.classList.remove('d-none');
+            
+            // Update balance display
+            const newBalance = parseFloat(result.data.balance || parseFloat(amount).toFixed(2));
+            document.querySelector('.metric-card h3').textContent = '{{ currency_symbol }}' + newBalance.toFixed(2);
+            
+            // Reset form and reload after 2 seconds to refresh all data
+            document.getElementById('addFundsForm').reset();
+            setTimeout(() => {
+                // Close modal by removing backdrop
+                const modal = document.getElementById('addFundsModal');
+                const backdrops = document.querySelectorAll('.modal-backdrop');
+                backdrops.forEach(b => b.remove());
+                // Force reload to show updated balance
+                window.location.href = window.location.href;
+            }, 2000);
+        } else if (result.status === 429) {
+            throw new Error('Too many requests. You can add funds up to 10 times per hour.');
+        } else if (result.status === 400) {
+            throw new Error(result.data.error || result.data.detail || 'Invalid amount');
+        } else if (result.status === 401) {
+            throw new Error('You must be logged in to add funds');
+        } else if (result.status === 500) {
+            console.error('Server error:', result.data);
+            throw new Error(result.data.error || 'Server error. Please try again.');
+        } else {
+            throw new Error('Failed to add funds: ' + result.status);
+        }
+    })
+    .catch(error => {
+        console.error('Add funds error:', error);
+        messageDiv.textContent = error.message || 'Error adding funds. Please try again.';
+        messageDiv.className = 'alert alert-danger';
+        messageDiv.classList.remove('d-none');
+    })
+    .finally(() => {
+        addFundsBtn.disabled = false;
+        addFundsBtn.innerHTML = '<i class="fas fa-check"></i> Add Funds';
+    });
+}
+
+// Reset form when modal is opened
+document.getElementById('addFundsModal').addEventListener('show.bs.modal', function () {
+    document.getElementById('addFundsForm').reset();
+    document.getElementById('fundsMessage').classList.add('d-none');
+    document.getElementById('addFundsBtn').disabled = false;
+    document.getElementById('addFundsBtn').innerHTML = '<i class="fas fa-check"></i> Add Funds';
+});
+</script>
+{% endblock %}

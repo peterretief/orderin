@@ -1,0 +1,79 @@
+{% extends 'shop/base.html' %}
+
+{% block title %}Shop{% endblock %}
+
+{% block content %}
+<div class="hero">
+    <h1>🏪 Fresh Products Marketplace</h1>
+    <p class="lead">Browse and order fresh products from local market agents</p>
+    <form class="search-box" method="get" action="{% url 'shop_search' %}">
+        <input type="text" name="q" placeholder="Search products..." required>
+        <button type="submit"><i class="fas fa-search"></i></button>
+    </form>
+</div>
+
+<div class="container-fluid py-4">
+    <div class="row">
+        <!-- Sidebar with Categories -->
+        <div class="col-lg-2">
+            <div class="sidebar">
+                <h5 class="mb-3">📂 Categories</h5>
+                <a href="/shop/" class="category-link active">All Products</a>
+                {% for category in categories %}
+                <a href="{% url 'shop_category' category.id %}" class="category-link">
+                    {{ category.name }}
+                </a>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="col-lg-10">
+            <h2 class="section-title">Featured Products</h2>
+            <div class="row g-4">
+                {% for product in featured_products %}
+                <div class="col-md-6 col-lg-4 col-xl-3">
+                    <div class="product-card">
+                        <div class="product-image">
+                            {% if product.image %}
+                                <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-100 h-100" style="object-fit: cover;">
+                            {% else %}
+                                <i class="fas fa-box"></i>
+                            {% endif %}
+                        </div>
+                        <div class="product-info">
+                            <h5 class="product-name">{{ product.name }}</h5>
+                            <div class="product-price">{{ currency_symbol }}{{ product.price }}</div>
+                            <div class="product-unit">{{ product.unit }}</div>
+                            <div class="product-stock">
+                                {% if product.quantity_available > 10 %}
+                                    <span class="stock-available">✓ In Stock ({{ product.quantity_available }})</span>
+                                {% elif product.quantity_available > 0 %}
+                                    <span class="stock-low">⚠ Low Stock ({{ product.quantity_available }})</span>
+                                {% else %}
+                                    <span style="color: #dc3545;">✗ Out of Stock</span>
+                                {% endif %}
+                            </div>
+                            <div class="product-actions">
+                                <a href="{% url 'product_detail' product.id %}" class="btn-view">View</a>
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" style="flex: 1;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="quantity" value="1">
+                                    <button type="submit" class="btn-add-cart w-100">Add to Cart</button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> No products available at the moment.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
