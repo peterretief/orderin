@@ -42,10 +42,16 @@ db.sqlite3
 /staticfiles/
 /static/
 
-# Environment variables
+# Environment variables and secrets
 .env
 .env.local
 .env.*.local
+.env.example  # If it contains real secrets
+*.key
+*.pem
+secrets.json
+config.local.py
+local_settings.py
 
 # Testing
 .coverage
