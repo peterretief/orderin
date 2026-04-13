@@ -30,6 +30,16 @@ class Product(models.Model):
     
     image = models.ImageField(upload_to='products/', blank=True, null=True)
     
+    # Certifications and sourcing info
+    is_organic = models.BooleanField(default=False, help_text='Is this product certified organic?')
+    is_gmo_free = models.BooleanField(default=False, help_text='Is this product GMO-free?')
+    certifications = models.CharField(
+        max_length=500,
+        blank=True,
+        null=True,
+        help_text='e.g., SAPO Organic, Fair Trade, etc.'
+    )
+    
     is_available = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

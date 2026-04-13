@@ -29,14 +29,25 @@
                 {% for product in products %}
                 <div class="col-md-6 col-lg-4 col-xl-3">
                     <div class="product-card">
-                        <div class="product-image">
+                        <div class="product-image" style="position: relative;">
                             {% if product.image %}
                                 <img src="{{ product.image.url }}" alt="{{ product.name }}" class="w-100 h-100" style="object-fit: cover;">
                             {% else %}
                                 <i class="fas fa-box"></i>
                             {% endif %}
+                            <!-- Certification badges -->
+                            <div style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; flex-direction: column;">
+                                {% if product.is_organic or product.market_agent.is_organic %}
+                                <span style="background: rgba(40, 167, 69, 0.9); color: white; padding: 3px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">🌱 Organic</span>
+                                {% endif %}
+                                {% if product.is_gmo_free or product.market_agent.is_gmo_free %}
+                                <span style="background: rgba(23, 162, 184, 0.9); color: white; padding: 3px 6px; border-radius: 10px; font-size: 0.7rem; font-weight: bold;">✓ GMO-Free</span>
+                                {% endif %}
+                            </div>
                         </div>
                         <div class="product-info">
+                            <!-- Vendor name -->
+                            <small style="color: #667eea; font-weight: 700; display: block; margin-bottom: 4px;">🌾 {{ product.market_agent.user.shop_name|truncatewords:3 }}</small>
                             <h5 class="product-name">{{ product.name }}</h5>
                             <div class="product-price">{{ currency_symbol }}{{ product.price }}</div>
                             <div class="product-unit">{{ product.unit }}</div>

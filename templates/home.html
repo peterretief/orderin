@@ -1,13 +1,540 @@
-{% extends "dashboards/base.html" %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order In - Fresh Farm-to-Table Marketplace</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-{% block title %}Home - Order In{% endblock %}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
 
-{% block content %}
-<div class="text-center py-5">
-    <h1>Welcome to Order In</h1>
-    <p class="lead">Redirecting to your dashboard...</p>
-    <script>
-        window.location.href = '/dashboards/';
-    </script>
-</div>
-{% endblock %}
+        /* Subscription Banner */
+        .subscription-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 0;
+            text-align: center;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .subscription-banner i {
+            margin-right: 8px;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 1rem 0;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 80px 0;
+            text-align: center;
+        }
+
+        .hero-section h1 {
+            font-size: 3rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .hero-section p {
+            font-size: 1.25rem;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+
+        .btn-hero {
+            padding: 12px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 50px;
+            margin: 10px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-hero:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+
+        /* Benefits Section */
+        .benefits-section {
+            padding: 80px 0;
+            background: #f8f9fa;
+        }
+
+        .benefit-card {
+            text-align: center;
+            padding: 30px;
+            border-radius: 10px;
+            background: white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            height: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.15);
+        }
+
+        .benefit-icon {
+            font-size: 2.5rem;
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        /* Role Selection */
+        .role-section {
+            padding: 80px 0;
+            background: white;
+        }
+
+        .role-card {
+            border: 2px solid #e9ecef;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: white;
+            height: 100%;
+        }
+
+        .role-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .role-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            color: #667eea;
+        }
+
+        .role-card h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .role-card p {
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95rem;
+        }
+
+        .btn-register {
+            width: 100%;
+            padding: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-register:hover {
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 80px 0;
+            background: linear-gradient(135deg, rgba(102,126,234,0.1) 0%, rgba(118,75,162,0.1) 100%);
+        }
+
+        .step {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .step-number {
+            display: inline-block;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50%;
+            line-height: 60px;
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .step h4 {
+            color: #333;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .step p {
+            color: #666;
+            font-size: 0.95rem;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 0;
+            text-align: center;
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .cta-section p {
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            opacity: 0.95;
+        }
+
+        /* Footer */
+        .footer {
+            background: #2c3e50;
+            color: white;
+            padding: 40px 0 20px;
+            font-size: 0.9rem;
+        }
+
+        .footer h5 {
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .footer a {
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #34495e;
+            margin-top: 30px;
+            padding-top: 20px;
+            text-align: center;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-section h1 {
+                font-size: 2rem;
+            }
+
+            .hero-section p {
+                font-size: 1rem;
+            }
+
+            .role-card {
+                margin-bottom: 30px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Subscription Banner -->
+    <div class="subscription-banner">
+        <i class="fas fa-leaf"></i>
+        <strong>Special Opportunity:</strong> Order fresh, healthy food directly from farms and local markets near you!
+    </div>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-shopping-basket"></i> Order In
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#how-it-works">How It Works</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#roles">Join Us As</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/login">Login</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <h1>🌱 Fresh Farm-to-Table Marketplace</h1>
+            <p>Connect with local farmers and markets. Order healthy, organic produce and food directly from the source.</p>
+            <div>
+                <a href="#roles" class="btn btn-light btn-hero">
+                    <i class="fas fa-user-plus"></i> Get Started
+                </a>
+                <a href="/login" class="btn btn-outline-light btn-hero">
+                    <i class="fas fa-sign-in-alt"></i> Sign In
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Benefits Section -->
+    <section class="benefits-section">
+        <div class="container">
+            <h2 class="text-center mb-5" style="font-weight: bold;">Why Order In?</h2>
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-leaf"></i>
+                        </div>
+                        <h4>Fresh & Organic</h4>
+                        <p>Direct from farms and local markets. No middlemen, no delays. Get the freshest produce.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                        </div>
+                        <h4>Local Support</h4>
+                        <p>Support your local farmers and market vendors. Strengthen your community economy.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <h4>Fast Delivery</h4>
+                        <p>Quick door-to-door delivery. Order today, receive fresh produce tomorrow.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-wallet"></i>
+                        </div>
+                        <h4>Fair Prices</h4>
+                        <p>No markups. Direct pricing from producers means better value for you.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <h4>Quality Assured</h4>
+                        <p>Verified sellers. All produce is inspected for quality and freshness.</p>
+                    </div>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <div class="benefit-card">
+                        <div class="benefit-icon">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h4>Easy to Use</h4>
+                        <p>Simple app and website. Order in minutes, track in real-time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works -->
+    <section class="how-it-works" id="how-it-works">
+        <div class="container">
+            <h2 class="text-center mb-5" style="font-weight: bold;">How It Works</h2>
+            <div class="row">
+                <div class="col-md-3 col-sm-6">
+                    <div class="step">
+                        <div class="step-number">1</div>
+                        <h4>Sign Up</h4>
+                        <p>Create your account in 2 minutes. Choose your role.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="step">
+                        <div class="step-number">2</div>
+                        <h4>Browse</h4>
+                        <p>Explore fresh products from local markets and farms.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="step">
+                        <div class="step-number">3</div>
+                        <h4>Order</h4>
+                        <p>Add items to cart and checkout. Choose delivery or pickup.</p>
+                    </div>
+                </div>
+                <div class="col-md-3 col-sm-6">
+                    <div class="step">
+                        <div class="step-number">4</div>
+                        <h4>Receive</h4>
+                        <p>Get fresh produce delivered to your doorstep.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Role Selection -->
+    <section class="role-section" id="roles">
+        <div class="container">
+            <h2 class="text-center mb-5" style="font-weight: bold;">Join as a Member</h2>
+            <p class="text-center mb-5 lead" style="color: #666;">Choose your role and start your journey with Order In</p>
+            
+            <div class="row">
+                <!-- Subscriber -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="role-card">
+                        <div class="role-icon">
+                            <i class="fas fa-shopping-cart"></i>
+                        </div>
+                        <h3>Subscriber</h3>
+                        <p>Order fresh, healthy food from local markets and farms. Get produce delivered to your doorstep.</p>
+                        <button class="btn-register" onclick="location.href='/register?type=subscriber'">
+                            Register as Subscriber
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Market Agent -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="role-card">
+                        <div class="role-icon">
+                            <i class="fas fa-store"></i>
+                        </div>
+                        <h3>Market Agent</h3>
+                        <p>Sell your products to customers. Manage your inventory and reach more buyers online.</p>
+                        <button class="btn-register" onclick="location.href='/register?type=market_agent'">
+                            Register as Market Agent
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Delivery Person -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="role-card">
+                        <div class="role-icon">
+                            <i class="fas fa-truck"></i>
+                        </div>
+                        <h3>Delivery Person</h3>
+                        <p>Earn money delivering orders. Flexible schedule, work when you want.</p>
+                        <button class="btn-register" onclick="location.href='/register?type=delivery_person'">
+                            Register as Delivery Person
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Caterer -->
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="role-card">
+                        <div class="role-icon">
+                            <i class="fas fa-utensils"></i>
+                        </div>
+                        <h3>Caterer</h3>
+                        <p>Offer catering and meal prep services. Connect with customers looking for professional food services.</p>
+                        <button class="btn-register" onclick="location.href='/register?type=caterer'">
+                            Register as Caterer
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Ready to Get Started?</h2>
+            <p>Choose your role above and join thousands of happy customers and vendors.</p>
+            <a href="#roles" class="btn btn-light btn-hero">
+                <i class="fas fa-user-plus"></i> Create Account Now
+            </a>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-3">
+                    <h5><i class="fas fa-shopping-basket"></i> Order In</h5>
+                    <p>Fresh farm-to-table marketplace connecting buyers and sellers.</p>
+                </div>
+                <div class="col-md-3">
+                    <h5>Quick Links</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#how-it-works">How It Works</a></li>
+                        <li><a href="#roles">Join Us</a></li>
+                        <li><a href="/login">Sign In</a></li>
+                        <li><a href="/contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>For Customers</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#">Browse Products</a></li>
+                        <li><a href="#">Delivery Info</a></li>
+                        <li><a href="#">FAQs</a></li>
+                        <li><a href="#">Support</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-3">
+                    <h5>Connect With Us</h5>
+                    <div>
+                        <a href="#" class="me-2"><i class="fab fa-facebook"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 Order In. All rights reserved. | <a href="#">Privacy Policy</a> | <a href="#">Terms of Service</a></p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -4,7 +4,69 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_http_methods
 from django import forms
 from django.contrib import messages
-from rest_framework.authtoken.models import Token
+from django.db import IntegrityError, transaction
+from users.models import CustomUser
+
+
+class RegistrationForm(forms.Form):
+    """Form for user registration."""
+    username = forms.CharField(
+        label='Username',
+        max_length=150,
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Choose a unique username',
+            'autofocus': True
+        }),
+        help_text='Required. 150 characters or fewer. Letters, digits and @/./+/-/_ only.'
+    )
+    email = forms.EmailField(
+        label='Email Address',
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'your.email@example.com'
+        }),
+        required=True
+    )
+    password = forms.CharField(
+        label='Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Enter a strong password'
+        }),
+        required=True,
+        help_text='Must be at least 8 characters'
+    )
+    password_confirm = forms.CharField(
+        label='Confirm Password',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Re-enter your password'
+        }),
+        required=True
+    )
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        password_confirm = cleaned_data.get('password_confirm')
+        
+        if password and password_confirm:
+            if password != password_confirm:
+                raise forms.ValidationError('Passwords do not match.')
+        
+        if password and len(password) < 8:
+            raise forms.ValidationError('Password must be at least 8 characters.')
+        
+        username = cleaned_data.get('username')
+        if username and CustomUser.objects.filter(username=username).exists():
+            raise forms.ValidationError('Username already taken.')
+        
+        email = cleaned_data.get('email')
+        if email and CustomUser.objects.filter(email=email).exists():
+            raise forms.ValidationError('Email already registered.')
+        
+        return cleaned_data
 
 
 class UserProfileForm(forms.Form):
@@ -185,10 +247,106 @@ def logout_view(request):
 
 
 def home_view(request):
-    """Home page - redirects to login or dashboard"""
+    """Home page - landing page with role selection"""
+    return render(request, 'home.html')
+
+
+@require_http_methods(["GET", "POST"])
+def register_view(request):
+    """User registration view with role selection."""
+    user_type = request.GET.get('type', 'subscriber')
+    
+    # Validate user type
+    valid_types = [choice[0] for choice in CustomUser.USER_TYPE_CHOICES if choice[0] != 'admin']
+    if user_type not in valid_types:
+        return redirect('home')
+    
     if request.user.is_authenticated:
         return redirect('dashboard_home')
-    return redirect('login')
+    
+    if request.method == 'POST':
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            username = form.cleaned_data['username']
+            email = form.cleaned_data['email']
+            
+            # Double-check for duplicates before creating (race condition protection)
+            if CustomUser.objects.filter(username=username).exists():
+                form.add_error('username', f'Username "{username}" is already taken. Please choose another.')
+                return render(request, 'auth/register.html', {
+                    'form': form,
+                    'user_type': user_type,
+                    'user_type_display': dict(CustomUser.USER_TYPE_CHOICES).get(user_type, 'User')
+                })
+            
+            if CustomUser.objects.filter(email=email).exists():
+                form.add_error('email', f'Email "{email}" is already registered. Please use another.')
+                return render(request, 'auth/register.html', {
+                    'form': form,
+                    'user_type': user_type,
+                    'user_type_display': dict(CustomUser.USER_TYPE_CHOICES).get(user_type, 'User')
+                })
+            
+            try:
+                # Use atomic transaction to ensure all-or-nothing creation
+                with transaction.atomic():
+                    # Triple-check immediately before creation (in transaction)
+                    if CustomUser.objects.filter(username=username).exists():
+                        raise IntegrityError("Username already exists")
+                    if CustomUser.objects.filter(email=email).exists():
+                        raise IntegrityError("Email already exists")
+                    
+                    user = CustomUser.objects.create_user(
+                        username=username,
+                        email=email,
+                        password=form.cleaned_data['password'],
+                        user_type=user_type
+                    )
+                    # Try to create API token (optional, not critical for login)
+                    try:
+                        from rest_framework.authtoken.models import Token
+                        Token.objects.get_or_create(user=user)
+                    except Exception:
+                        # Token creation is optional, don't fail registration if it fails
+                        pass
+                
+                messages.success(request, f'Account created successfully! Welcome to Order In as a {user_type.replace("_", " ").title()}.')
+                login(request, user)
+                return redirect('dashboard_home')
+            except (IntegrityError, Exception) as e:
+                # If IntegrityError occurred, absolutely no user was created
+                error_msg = str(e).lower()
+                if 'username' in error_msg:
+                    error_text = 'Username is already taken. Please choose a different username.'
+                elif 'email' in error_msg:
+                    error_text = 'Email is already registered. Please use a different email.'
+                else:
+                    error_text = f'Registration failed: {str(e)}'
+                
+                messages.error(request, error_text)
+                # Re-render form so user can try again
+                return render(request, 'auth/register.html', {
+                    'form': form,
+                    'user_type': user_type,
+                    'user_type_display': dict(CustomUser.USER_TYPE_CHOICES).get(user_type, 'User')
+                })
+        else:
+            # Form has validation errors, show them
+            return render(request, 'auth/register.html', {
+                'form': form,
+                'user_type': user_type,
+                'user_type_display': dict(CustomUser.USER_TYPE_CHOICES).get(user_type, 'User')
+            })
+    else:
+        form = RegistrationForm()
+    
+    user_type_display = dict(CustomUser.USER_TYPE_CHOICES).get(user_type, 'User')
+    
+    return render(request, 'auth/register.html', {
+        'form': form,
+        'user_type': user_type,
+        'user_type_display': user_type_display
+    })
 
 
 @login_required

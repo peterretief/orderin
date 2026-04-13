@@ -243,8 +243,8 @@ See `requirements.txt` for complete list. Key packages:
 - Django 4.2+
 - djangorestframework
 - django-cors-headers
+- psycopg2-binary (PostgreSQL driver)
 - geopy (for address geocoding)
-- Pillow (image handling)
 
 ## 📝 Environment Variables
 
@@ -480,14 +480,17 @@ curl -X POST http://localhost:8000/api/billing/balance/add_funds/ \
 
 5. **Enable HTTPS** with SSL certificates
 
-6. **Database Backups**: Set up regular Supabase backups
+6. **Database Backups**: Set up regular PostgreSQL backups
+   ```bash
+   pg_dump -U username -h localhost orderin > backup.sql
+   ```
 
 ## Troubleshooting
 
 ### Database Connection Errors
-- Verify Supabase is running on 192.168.0.102:8000
-- Check DB_PASSWORD in .env file
-- Ensure PostgreSQL is accessible
+- Verify PostgreSQL is running
+- Check DATABASE_URL in .env file
+- Ensure PostgreSQL is accessible with correct credentials
 
 ### Migration Errors
 - Run: `python manage.py migrate --run-syncdb`

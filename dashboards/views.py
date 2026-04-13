@@ -217,7 +217,10 @@ def market_agent_dashboard(request):
     market_agent = MarketAgent.objects.filter(user=user).first()
     
     if not market_agent:
-        return redirect('dashboard_home')
+        # Create empty MarketAgent profile if it doesn't exist
+        market_agent = MarketAgent.objects.create(user=user)
+        # Or you can redirect to profile setup instead
+        # return redirect('edit_profile')
     
     # Product statistics
     total_products = Product.objects.filter(market_agent=market_agent).count()
@@ -304,7 +307,11 @@ def service_agent_dashboard(request):
     service_agent = ServiceAgent.objects.filter(user=user).first()
     
     if not service_agent:
-        return redirect('dashboard_home')
+        # Create empty ServiceAgent profile if it doesn't exist
+        service_agent = ServiceAgent.objects.create(
+            user=user,
+            service_type='delivery' if user.user_type == 'delivery_person' else 'catering'
+        )
     
     # Service statistics
     total_bookings = service_agent.orders.count()

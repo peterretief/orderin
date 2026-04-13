@@ -23,6 +23,7 @@ else:
 
 # Application definition
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,7 +44,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
+    # 'django.middleware.security.SecurityMiddleware',  # Temporarily disabled for ASGI debugging
     'corsheaders.middleware.CorsMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -73,6 +74,8 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'config.wsgi.application'
+
+ASGI_APPLICATION = 'config.asgi:application'
 
 # Database - SQLite for development
 DATABASES = {
@@ -122,12 +125,24 @@ REST_FRAMEWORK = {
 
 # CORS
 CORS_ALLOWED_ORIGINS = [
-    'http://localhost:8009',
-    'http://127.0.0.1:8009',
+    'http://localhost:8010',
+    'http://127.0.0.1:8010',
     'http://localhost:3000',
     'http://localhost:8000',
     'http://localhost:5173',
 ] if DEBUG else config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000,http://localhost:8000').split(',')
+
+# CSRF - Trust nginx proxy port and production domain
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:90',
+    'http://127.0.0.1:90',
+    'http://localhost:8010',
+    'http://127.0.0.1:8010',
+    'http://goodfoody.co.za',
+    'https://goodfoody.co.za',
+    'http://www.goodfoody.co.za',
+    'https://www.goodfoody.co.za',
+]
 
 
 

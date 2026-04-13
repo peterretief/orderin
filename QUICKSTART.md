@@ -1,7 +1,7 @@
 # Quick Start Guide
 
 ## Prerequisites
-- Supabase PostgreSQL database running at `192.168.0.102:8000`
+- PostgreSQL database (local or remote)
 - Python 3.8 or higher
 - pip and virtualenv
 
@@ -23,9 +23,14 @@ pip install -r requirements.txt
 cp .env.example .env
 
 # Edit .env with your database credentials
-# Make sure these values are correct:
-# - DB_PASSWORD: Your Supabase password
-# - DJANGO_SECRET_KEY: Change to a secure random key
+# For SQLite (development):
+# DATABASE_URL=sqlite:///db.sqlite3
+
+# For PostgreSQL:
+# DATABASE_URL=postgresql://user:password@localhost:5432/orderin
+
+# Also change:
+# DJANGO_SECRET_KEY: Generate a new secure random key
 ```
 
 ### 3. Run Database Migrations
@@ -205,9 +210,10 @@ orderin/
 ## Common Issues & Solutions
 
 ### Issue: "Connection refused" on database
-- Check Supabase is running on 192.168.0.102:8000
-- Verify DB_PASSWORD in .env
-- Check network connectivity
+- Verify DATABASE_URL in .env is correct
+- For PostgreSQL: Check postgres service is running
+- For SQLite: Check database file is writable
+- Test connection: `python manage.py shell`
 
 ### Issue: "No such table" errors after migration
 - Run: `python manage.py migrate --run-syncdb`

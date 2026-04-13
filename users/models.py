@@ -94,6 +94,21 @@ class MarketAgent(models.Model):
     
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='market_profile')
     is_active = models.BooleanField(default=True)
+    
+    # Certifications and farm information
+    is_organic = models.BooleanField(default=False, help_text='Is this farm certified organic?')
+    is_gmo_free = models.BooleanField(default=False, help_text='Are products GMO-free?')
+    certifications = models.TextField(
+        blank=True, 
+        null=True,
+        help_text='e.g., SAPO Organic, Fair Trade, Rainforest Alliance, etc.'
+    )
+    farm_description = models.TextField(
+        blank=True,
+        null=True,
+        help_text='Detailed description of farm practices, what you grow, etc.'
+    )
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

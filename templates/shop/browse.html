@@ -26,11 +26,29 @@
             {% for product in products %}
                 <div class="col-md-4 mb-4">
                     <div class="card h-100">
-                        <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 200px; object-fit: cover; background-color: #eee;">
+                        <!-- Image with vendor badge overlay -->
+                        <div style="position: relative; height: 200px; overflow: hidden;">
+                            <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 100%; width: 100%; object-fit: cover; background-color: #eee;">
+                            <!-- Certification badges -->
+                            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                                {% if product.is_organic or product.market_agent.is_organic %}
+                                <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">🌱 Organic</span>
+                                {% endif %}
+                                {% if product.is_gmo_free or product.market_agent.is_gmo_free %}
+                                <span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">✓ GMO-Free</span>
+                                {% endif %}
+                            </div>
+                        </div>
+
                         <div class="card-body">
+                            <!-- Vendor name prominently -->
+                            <p style="font-size: 0.85rem; color: #667eea; font-weight: 600; margin: 0 0 8px 0;">
+                                🌾 {{ product.market_agent.user.shop_name }}
+                            </p>
+                            
                             <h5 class="card-title">{{ product.name }}</h5>
                             <p class="card-text text-muted"><small>{{ product.category.name }}</small></p>
-                            <p class="card-text">{{ product.description|truncatewords:20 }}</p>
+                            <p class="card-text" style="font-size: 0.9rem;">{{ product.description|truncatewords:20 }}</p>
                             <div class="mb-3">
                                 <strong>{{ currency_symbol }}{{ product.price|floatformat:2 }} / {{ product.unit }}</strong>
                                 {% if product.quantity_available > 0 %}
@@ -41,12 +59,15 @@
                             </div>
                         </div>
                         <div class="card-footer bg-white">
+                            <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline-primary w-100 mb-2">
+                                <i class="fas fa-eye"></i> View Details
+                            </a>
                             {% if product.quantity_available > 0 %}
-                                <form method="post" action="{% url 'add_to_cart' product.id %}" style="display:inline;">
+                                <form method="post" action="{% url 'add_to_cart' product.id %}" style="display:block;">
                                     {% csrf_token %}
                                     <div class="input-group input-group-sm">
                                         <input type="number" name="quantity" value="1" min="1" max="{{ product.quantity_available }}" class="form-control">
-                                        <button type="submit" class="btn btn-primary btn-sm">Add to Cart</button>
+                                        <button type="submit" class="btn btn-primary btn-sm">Add</button>
                                     </div>
                                 </form>
                             {% else %}
