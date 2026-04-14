@@ -10,15 +10,46 @@ from users.models import MarketAgent
 
 
 def shop_home(request):
-    """Shop homepage - redirect to browse"""
-    return redirect('shop_browse')
+    """Shop homepage - show farms/markets first"""
+    return redirect('shop_farms')
+
+
+def shop_farms(request):
+    """Browse farms/markets - main entry point to shop"""
+    # Get all active farms/markets
+    farms = MarketAgent.objects.filter(
+        user__is_active=True
+    ).select_related('user').order_by('user__shop_name')
+    
+    # Get cart count for badge (only if authenticated)
+    cart_count = 0
+    if request.user.is_authenticated and request.user.user_type == 'subscriber':
+        cart, _ = ShoppingCart.objects.get_or_create(subscriber=request.user)
+        cart_count = cart.get_total_items()
+    
+    context = {
+        'farms': farms,
+        'cart_count': cart_count,
+    }
+    return render(request, 'shop/farms.html', context)
 
 
 def shop_browse(request):
-    """Browse all products with cart support"""
+    """Browse all products or products from a specific farm"""
+    farm_id = request.GET.get('farm_id')
     
     categories = ProductCategory.objects.all()
     products = Product.objects.filter(is_available=True).all()
+    selected_farm = None
+    
+    # Filter by farm if specified
+    if farm_id:
+        try:
+            farm_id = int(farm_id)
+            selected_farm = get_object_or_404(MarketAgent, id=farm_id, user__is_active=True)
+            products = products.filter(market_agent=selected_farm)
+        except (ValueError, TypeError):
+            pass
     
     # Get cart count for badge (only if authenticated)
     cart_count = 0
@@ -29,6 +60,7 @@ def shop_browse(request):
     context = {
         'categories': categories,
         'products': products,
+        'selected_farm': selected_farm,
         'cart_count': cart_count,
     }
     return render(request, 'shop/browse.html', context)

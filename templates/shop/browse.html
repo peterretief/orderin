@@ -5,52 +5,185 @@
 
 {% block content %}
 <div class="container mt-5">
+    <!-- Breadcrumb / Navigation -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a href="{% url 'shop_farms' %}">
+                            <i class="fas fa-home"></i> Select Farm/Market
+                        </a>
+                    </li>
+                    {% if selected_farm %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            {{ selected_farm.user.shop_name }}
+                        </li>
+                    {% else %}
+                        <li class="breadcrumb-item active" aria-current="page">
+                            All Products
+                        </li>
+                    {% endif %}
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Header with Farm Info (if selected) -->
+    {% if selected_farm %}
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card bg-light border" style="border-left: 4px solid #667eea;">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-auto">
+                            {% if selected_farm.user.shop_logo %}
+                                <img src="{{ selected_farm.user.shop_logo.url }}" alt="{{ selected_farm.user.shop_name }}" style="height: 70px; width: 70px; object-fit: cover; border-radius: 8px;">
+                            {% else %}
+                                <div style="height: 70px; width: 70px; background: #667eea; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white;">
+                                    <i class="fas fa-store" style="font-size: 1.8rem;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col">
+                            <h4 class="mb-1">{{ selected_farm.user.shop_name }}</h4>
+                            {% if selected_farm.user.shop_description %}
+                                <p class="text-muted mb-0"><small>{{ selected_farm.user.shop_description|truncatewords:20 }}</small></p>
+                            {% endif %}
+                        </div>
+                        <div class="col-auto">
+                            <a href="{% url 'shop_farms' %}" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-arrow-left"></i> Select Different Farm
+                            </a>
+                        </div>
+                    </div>
+                    
+                    <!-- Certifications Section - PROMINENT -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div style="background: white; padding: 12px; border-radius: 4px; border-left: 3px solid #28a745;">
+                                <div style="font-size: 0.9rem; font-weight: 600; color: #333; margin-bottom: 10px;">
+                                    <i class="fas fa-certificate"></i> Certifications & Quality Standards
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+                                    {% if selected_farm.is_organic %}
+                                        <span style="background: #28a745; color: white; padding: 8px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-leaf"></i> ORGANIC CERTIFIED
+                                        </span>
+                                    {% endif %}
+                                    {% if selected_farm.is_gmo_free %}
+                                        <span style="background: #17a2b8; color: white; padding: 8px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-check-circle"></i> GMO-FREE VERIFIED
+                                        </span>
+                                    {% endif %}
+                                    {% if selected_farm.certifications %}
+                                        <span style="background: #ffc107; color: #333; padding: 8px 12px; border-radius: 4px; font-size: 0.85rem; font-weight: bold; display: inline-flex; align-items: center; gap: 5px;">
+                                            <i class="fas fa-award"></i> {{ selected_farm.certifications|truncatewords:4 }}
+                                        </span>
+                                    {% endif %}
+                                    {% if not selected_farm.is_organic and not selected_farm.is_gmo_free and not selected_farm.certifications %}
+                                        <small class="text-muted">No certifications listed</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <!-- Search Bar -->
     <div class="row mb-5">
         <div class="col-md-8 mx-auto">
             <form method="get" action="{% url 'shop_search' %}" class="input-group input-group-lg">
-                <input type="text" name="q" class="form-control" placeholder="Search for products or shops..." required>
+                <input type="text" name="q" class="form-control" placeholder="Search for products{% if selected_farm %} from {{ selected_farm.user.shop_name }}{% endif %}..." required>
                 <button class="btn btn-primary" type="submit">
-                    <i class="fas fa-search"></i> Search
+                    <i class="fas fa-search"></i> {% if selected_farm %}Search in Farm{% else %}Global Search{% endif %}
                 </button>
             </form>
-            <small class="text-muted d-block mt-2">Try searching: "apple", "organic", "fresh", or shop names</small>
+            <small class="text-muted d-block mt-2">
+                {% if selected_farm %}
+                    Search within {{ selected_farm.user.shop_name }}'s products
+                {% else %}
+                    Search across all farms and products
+                {% endif %}
+            </small>
         </div>
     </div>
 
-    <h1>Shopping Marketplace</h1>
-    <p>Available products: {{ products|length }}</p>
+    <!-- Products Title -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>
+                {% if selected_farm %}
+                    Products from {{ selected_farm.user.shop_name }}
+                {% else %}
+                    All Available Products
+                {% endif %}
+            </h2>
+            <p class="text-muted">Available products: {{ products|length }}</p>
+        </div>
+    </div>
 
     {% if products %}
         <div class="row">
             {% for product in products %}
                 <div class="col-md-4 mb-4">
-                    <div class="card h-100">
+                    <div class="card h-100 product-card">
                         <!-- Image with vendor badge overlay -->
                         <div style="position: relative; height: 200px; overflow: hidden;">
                             <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}" style="height: 100%; width: 100%; object-fit: cover; background-color: #eee;">
                             <!-- Certification badges -->
-                            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 5px; flex-wrap: wrap; justify-content: flex-end;">
+                            <div style="position: absolute; top: 10px; right: 10px; display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end;">
                                 {% if product.is_organic or product.market_agent.is_organic %}
-                                <span style="background: #28a745; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">🌱 Organic</span>
+                                <span style="background: #28a745; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-leaf"></i> ORGANIC
+                                </span>
                                 {% endif %}
                                 {% if product.is_gmo_free or product.market_agent.is_gmo_free %}
-                                <span style="background: #17a2b8; color: white; padding: 4px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: bold;">✓ GMO-Free</span>
+                                <span style="background: #17a2b8; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.2); display: flex; align-items: center; gap: 4px;">
+                                    <i class="fas fa-check-circle"></i> GMO-FREE
+                                </span>
                                 {% endif %}
                             </div>
                         </div>
 
                         <div class="card-body">
-                            <!-- Vendor name prominently -->
+                            <!-- Vendor name prominently (only show if browsing all products) -->
+                            {% if not selected_farm %}
                             <p style="font-size: 0.85rem; color: #667eea; font-weight: 600; margin: 0 0 8px 0;">
                                 🌾 {{ product.market_agent.user.shop_name }}
                             </p>
+                            {% endif %}
                             
                             <h5 class="card-title">{{ product.name }}</h5>
                             <p class="card-text text-muted"><small>{{ product.category.name }}</small></p>
                             <p class="card-text" style="font-size: 0.9rem;">{{ product.description|truncatewords:20 }}</p>
+                            
+                            <!-- Certifications section in card body -->
+                            {% if product.is_organic or product.is_gmo_free or product.certifications or product.market_agent.is_organic or product.market_agent.is_gmo_free or product.market_agent.certifications %}
+                            <div style="background: #f0f8ff; padding: 8px; border-radius: 4px; margin-bottom: 12px; border-left: 3px solid #28a745;">
+                                <small style="font-weight: 600; color: #333;">
+                                    <i class="fas fa-certificate" style="color: #28a745;"></i> Quality Certifications
+                                </small>
+                                <div style="margin-top: 6px; display: flex; flex-wrap: wrap; gap: 4px;">
+                                    {% if product.is_organic %}
+                                        <span style="background: #28a745; color: white; padding: 3px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: bold;">Organic</span>
+                                    {% endif %}
+                                    {% if product.is_gmo_free %}
+                                        <span style="background: #17a2b8; color: white; padding: 3px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: bold;">GMO-Free</span>
+                                    {% endif %}
+                                    {% if product.certifications %}
+                                        <span style="background: #ffc107; color: #333; padding: 3px 6px; border-radius: 3px; font-size: 0.75rem; font-weight: bold;">{{ product.certifications|truncatewords:2 }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            {% endif %}
+                            
                             <div class="mb-3">
-                                <strong>{{ currency_symbol }}{{ product.price|floatformat:2 }} / {{ product.unit }}</strong>
+                                <strong style="font-size: 1.1rem;">{{ currency_symbol }}{{ product.price|floatformat:2 }} / {{ product.unit }}</strong>
                                 {% if product.quantity_available > 0 %}
                                     <br><span class="badge bg-success">In Stock ({{ product.quantity_available }})</span>
                                 {% else %}
@@ -80,7 +213,13 @@
         </div>
     {% else %}
         <div class="alert alert-info">
-            <p>No products available.</p>
+            <p><i class="fas fa-info-circle"></i> No products available{% if selected_farm %} from {{ selected_farm.user.shop_name }}{% endif %}.</p>
+            {% if selected_farm %}
+                <p class="mb-0">
+                    <a href="{% url 'shop_farms' %}" class="alert-link">Browse other farms</a> or 
+                    <a href="{% url 'shop_browse' %}" class="alert-link">view all products</a>
+                </p>
+            {% endif %}
         </div>
     {% endif %}
 </div>
@@ -92,6 +231,21 @@
 .card:hover {
     transform: translateY(-5px);
     box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+}
+
+.product-card {
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s ease;
+}
+
+.product-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+    border-color: #667eea;
+}
+
+.product-card .card-body {
+    padding-top: 16px;
 }
 </style>
 {% endblock %}

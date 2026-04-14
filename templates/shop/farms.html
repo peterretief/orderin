@@ -1,0 +1,144 @@
+{% extends 'dashboards/base.html' %}
+{% load static %}
+
+{% block title %}Select Farm/Market - Order In{% endblock %}
+
+{% block content %}
+<div class="container mt-5 mb-5">
+    <!-- Header -->
+    <div class="row mb-5">
+        <div class="col-md-12">
+            <h1 class="mb-3">Welcome to the Marketplace</h1>
+            <p class="lead text-muted">Select a farm/market to browse their products, or search globally</p>
+        </div>
+    </div>
+
+    <!-- Global Search Bar -->
+    <div class="row mb-5">
+        <div class="col-md-8 mx-auto">
+            <form method="get" action="{% url 'shop_search' %}" class="input-group input-group-lg">
+                <input type="text" name="q" class="form-control" placeholder="Search across all farms, products..." required>
+                <button class="btn btn-primary" type="submit">
+                    <i class="fas fa-search"></i> Global Search
+                </button>
+            </form>
+            <small class="text-muted d-block mt-2">Search for products, farms, or specific items</small>
+        </div>
+    </div>
+
+    <!-- Browse All Products Option -->
+    <div class="row mb-4">
+        <div class="col-md-8 mx-auto">
+            <a href="{% url 'shop_browse' %}" class="btn btn-outline-secondary btn-lg w-100">
+                <i class="fas fa-th"></i> Browse All Products from All Farms
+            </a>
+        </div>
+    </div>
+
+    <hr class="my-5">
+
+    <!-- Farms/Markets Section -->
+    <div class="row mb-3">
+        <div class="col-md-12">
+            <h2>Farms & Markets</h2>
+            <p class="text-muted">Available farms: {{ farms|length }}</p>
+        </div>
+    </div>
+
+    {% if farms %}
+        <div class="row">
+            {% for farm in farms %}
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 farm-card">
+                        <!-- Farm Image/Logo -->
+                        <div style="position: relative; height: 180px; overflow: hidden; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); display: flex; align-items: center; justify-content: center;">
+                            {% if farm.user.shop_logo %}
+                                <img src="{{ farm.user.shop_logo.url }}" class="card-img-top" alt="{{ farm.user.shop_name }}" style="height: 100%; width: 100%; object-fit: cover;">
+                            {% else %}
+                                <div style="color: white; text-align: center;">
+                                    <i class="fas fa-store" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="card-body">
+                            <h5 class="card-title">{{ farm.user.shop_name }}</h5>
+                            
+                            <!-- Certifications Section - PROMINENT -->
+                            <div class="mb-3 p-2" style="background: #f8f9fa; border-left: 4px solid #667eea; border-radius: 4px;">
+                                <div style="font-size: 0.85rem; font-weight: 600; color: #667eea; margin-bottom: 8px;">
+                                    <i class="fas fa-certificate"></i> Certifications
+                                </div>
+                                <div style="display: flex; flex-wrap: wrap; gap: 6px;">
+                                    {% if farm.is_organic %}
+                                        <span style="background: #28a745; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-leaf"></i> Organic
+                                        </span>
+                                    {% endif %}
+                                    {% if farm.is_gmo_free %}
+                                        <span style="background: #17a2b8; color: white; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-check-circle"></i> GMO-Free
+                                        </span>
+                                    {% endif %}
+                                    {% if farm.certifications %}
+                                        <span style="background: #ffc107; color: #333; padding: 6px 10px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; display: inline-flex; align-items: center; gap: 4px;">
+                                            <i class="fas fa-award"></i> {{ farm.certifications|truncatewords:3 }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            {% if farm.user.shop_description %}
+                                <p class="card-text text-muted small mb-2">{{ farm.user.shop_description|truncatewords:20 }}</p>
+                            {% endif %}
+                            
+                            {% if farm.farm_description %}
+                                <p class="card-text" style="font-size: 0.9rem; margin-bottom: 2;">
+                                    <small>{{ farm.farm_description|truncatewords:15 }}</small>
+                                </p>
+                            {% endif %}
+                            
+                            <!-- Product count -->
+                            <div class="mt-3">
+                                <span class="badge bg-info" style="font-size: 0.85rem; padding: 6px 10px;">
+                                    <i class="fas fa-box"></i> {{ farm.products.count }} Products
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="card-footer bg-white border-top">
+                            <a href="{% url 'shop_browse' %}?farm_id={{ farm.id }}" class="btn btn-primary btn-sm w-100">
+                                <i class="fas fa-shopping-basket"></i> Browse Products
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle"></i> No farms/markets are currently available.
+        </div>
+    {% endif %}
+</div>
+
+<style>
+.farm-card {
+    transition: transform 0.2s, box-shadow 0.2s;
+    border: none;
+}
+
+.farm-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.15);
+}
+
+.farm-card .btn {
+    font-weight: 500;
+}
+
+.farm-card .btn:hover {
+    text-decoration: none;
+}
+</style>
+{% endblock %}
